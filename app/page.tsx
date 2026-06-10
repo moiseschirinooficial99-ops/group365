@@ -164,7 +164,7 @@ export default function HomePage() {
               </motion.h1>
 
               <motion.p variants={FU} className="text-gray-300 text-lg font-light leading-relaxed">
-                Creando espacios modernos que inspiran. Alquileres, compras e inversiones premium en España.
+                Propiedades premium en las mejores ubicaciones de España. Asesoría experta, resultados garantizados.
               </motion.p>
 
               {/* Team avatars + stat */}
@@ -196,17 +196,16 @@ export default function HomePage() {
             </motion.div>
           </div>
 
-          {/* Floating tags */}
-          <div className="absolute right-10 bottom-52 hidden xl:flex flex-col gap-3">
-            {['Villas de Lujo', 'Apartamentos', 'Inversión'].map((tag, i) => (
-              <motion.span key={i}
-                initial={{ opacity: 0, x: 24 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 1.1 + i * 0.15, duration: 0.5 }}
-                className="text-xs font-semibold bg-white/8 backdrop-blur-sm border border-white/12 text-white/80 px-4 py-2 rounded-full">
-                {tag}
-              </motion.span>
-            ))}
+          {/* Logo 3D flotante */}
+          <div className="absolute right-16 top-1/2 -translate-y-1/2 hidden xl:flex items-center justify-center">
+            <motion.img
+              src="/logo.png"
+              alt="GROUP 360"
+              animate={{ y: [0, -12, 0] }}
+              transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ width: 260, height: 260, filter: 'drop-shadow(0 0 40px rgba(201,168,76,0.45)) drop-shadow(0 0 80px rgba(27,127,111,0.2))' }}
+              className="object-contain"
+            />
           </div>
         </div>
 
@@ -269,9 +268,9 @@ export default function HomePage() {
                 </span>
               </div>
               <p className="text-[#8B96A5] leading-relaxed mb-8">
-                Somos un equipo dedicado a ayudar a clientes a comprar, vender e invertir en propiedades
-                premium residenciales. Con conocimiento profundo del mercado español y acceso a la red
-                eXp Realty, ofrecemos oportunidades únicas en cada segmento del mercado.
+                Somos un equipo especializado en el mercado inmobiliario español con más de 15 años de
+                experiencia. Ofrecemos acceso exclusivo a propiedades off-market, gestión integral y
+                asesoría personalizada en cada etapa del proceso.
               </p>
               <div className="border-l-2 border-[#C9A84C]/30 pl-5 mb-10">
                 <p className="text-gray-300 text-sm italic leading-relaxed mb-3">
@@ -321,11 +320,9 @@ export default function HomePage() {
             <motion.img
               src="/logo.png"
               alt="GROUP 360"
-              width={180}
-              height={180}
-              animate={{ y: [0, -8, 0] }}
+              animate={{ y: [0, -10, 0] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-              style={{ filter: 'drop-shadow(0 0 30px rgba(201,168,76,0.3))', width: 180, height: 180, mixBlendMode: 'lighten' }}
+              style={{ width: 220, height: 220, filter: 'drop-shadow(0 0 35px rgba(201,168,76,0.5)) drop-shadow(0 0 70px rgba(27,127,111,0.25))' }}
               className="object-contain"
             />
           </div>
