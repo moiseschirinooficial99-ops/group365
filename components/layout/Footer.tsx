@@ -47,20 +47,20 @@ export default function Footer() {
         <div>
           <h4 className="text-white font-semibold text-xs tracking-[0.2em] uppercase mb-5">Redes Sociales</h4>
           <ul className="space-y-3 text-sm text-[#8B96A5]">
-            <li><a href="#" className="hover:text-white transition-colors">Instagram</a></li>
-            <li><a href="#" className="hover:text-white transition-colors">TikTok</a></li>
-            <li><a href="#" className="hover:text-white transition-colors">LinkedIn</a></li>
+            <li><a href="https://www.instagram.com/group360iniciativas" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Instagram</a></li>
+            <li><a href="https://www.tiktok.com/@group360iniciativas" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">TikTok</a></li>
           </ul>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-3">
         <p className="text-[#8B96A5] text-xs">
           © 2024 GROUP 360 INICIATIVAS. Todos los derechos reservados.
         </p>
-        <p className="text-[#8B96A5] text-xs tracking-widest uppercase">
-          Visión 360° del Mercado Inmobiliario
-        </p>
+        <a href="https://macdestudios.com" target="_blank" rel="noopener noreferrer"
+          className="text-[#8B96A5] text-xs hover:text-[#C9A84C] transition-colors">
+          Desarrollo y producción por macdestudios.com
+        </a>
       </div>
     </footer>
   )
