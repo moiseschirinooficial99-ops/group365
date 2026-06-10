@@ -54,7 +54,7 @@ const SERVICES = [
 const PROPERTIES = [
   { id: '1', title: 'Villa Exclusiva Marbella', price: 650000, location: 'Marbella, Costa del Sol', bedrooms: 5, bathrooms: 4, area_sqm: 380, estimated_roi: 6.0, yearly_rent: 39000, channel: 'personal', main_image: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800' },
   { id: '2', title: 'Apartamento Premium Madrid', price: 480000, location: 'Madrid, Salamanca', bedrooms: 3, bathrooms: 2, area_sqm: 145, estimated_roi: 5.0, yearly_rent: 24000, channel: 'exp', main_image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800' },
-  { id: '3', title: 'Atico Frente al Mar', price: 890000, location: 'Barcelona, Barceloneta', bedrooms: 4, bathrooms: 3, area_sqm: 220, estimated_roi: 5.5, yearly_rent: 48900, channel: 'personal', main_image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c349dd6?w=800' },
+  { id: '3', title: 'Atico Frente al Mar', price: 890000, location: 'Barcelona, Barceloneta', bedrooms: 4, bathrooms: 3, area_sqm: 220, estimated_roi: 5.5, yearly_rent: 48900, channel: 'personal', main_image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800' },
   { id: '4', title: 'Villa Turistica Costa del Sol', price: 380000, location: 'Estepona, Malaga', bedrooms: 4, bathrooms: 3, area_sqm: 250, estimated_roi: 6.0, yearly_rent: 22800, channel: 'alquiler', main_image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800' },
 ]
 
@@ -117,6 +117,35 @@ export default function HomePage() {
 
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto w-full">
           <motion.div variants={STAGGER} initial="hidden" animate="show" className="space-y-5">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+              className="flex justify-center"
+            >
+              <motion.img
+                src="/logo.png"
+                alt="GROUP 360"
+                width={200}
+                height={200}
+                animate={{
+                  y: [0, -10, 0],
+                  rotateY: [0, 5, 0, -5, 0],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+                style={{
+                  filter: 'drop-shadow(0 0 20px rgba(201,168,76,0.4))',
+                  width: 200,
+                  height: 200,
+                }}
+                className="rounded-2xl"
+              />
+            </motion.div>
+
             <motion.p variants={FADE_UP}
               className="text-[#1B7F6F] text-xs font-semibold tracking-[0.5em] uppercase">
               GROUP 360 INICIATIVAS &middot; eXp Realty España
