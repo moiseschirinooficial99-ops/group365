@@ -17,7 +17,6 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
 html { scroll-behavior: smooth; }
 
 body {
@@ -28,6 +27,12 @@ body {
 }
 
 h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee { animation: marquee 32s linear infinite; }
 
 @layer components {
   .btn-primary {
@@ -42,12 +47,10 @@ h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
   }
   .card {
     @apply bg-[#161D26] border border-white/5 rounded-xl
-           transition-all duration-300 hover:border-white/10
-           hover:bg-[#1c2535];
+           transition-all duration-300 hover:border-white/10 hover:bg-[#1c2535];
   }
   .gold-text {
-    @apply bg-gradient-to-r from-[#C9A84C] to-[#E8D5A3]
-           bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-[#C9A84C] to-[#E8D5A3] bg-clip-text text-transparent;
   }
   .green-text { color: var(--green); }
   .input {
