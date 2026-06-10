@@ -1,0 +1,79 @@
+{
+  "name": "360GROUP — Telegram Audio → Calendario",
+  "nodes": [
+    {
+      "name": "Telegram Voice",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "parameters": { "updates": ["message"], "additionalFields": {} },
+      "position": [240, 300]
+    },
+    {
+      "name": "Is Voice?",
+      "type": "n8n-nodes-base.if",
+      "parameters": {
+        "conditions": {
+          "boolean": [{ "value1": "={{$json.message.voice !== undefined}}", "value2": true }]
+        }
+      },
+      "position": [460, 300]
+    },
+    {
+      "name": "Download Audio",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.telegram.org/bot{{$env.TG_TOKEN}}/getFile?file_id={{$json.message.voice.file_id}}"
+      },
+      "position": [680, 200]
+    },
+    {
+      "name": "Transcribe Whisper",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/transcriptions",
+        "headers": { "Authorization": "=Bearer {{$env.OPENAI_KEY}}" },
+        "body": { "model": "whisper-1", "language": "es" }
+      },
+      "position": [900, 200]
+    },
+    {
+      "name": "Extract Events",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Extrae eventos de disponibilidad del texto. Devuelve JSON: { events: [{ date_from, date_to, status: available/busy, notes }] }. Formato ISO 8601 para fechas. Solo JSON."
+            },
+            { "role": "user", "content": "={{$json.text}}" }
+          ]
+        }
+      },
+      "position": [1120, 200]
+    },
+    {
+      "name": "Save Availability",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/agent_availability",
+        "headers": {
+          "apikey": "={{$env.SUPABASE_KEY}}",
+          "Authorization": "=Bearer {{$env.SUPABASE_KEY}}",
+          "Content-Type": "application/json"
+        }
+      },
+      "position": [1340, 200]
+    }
+  ],
+  "connections": {
+    "Telegram Voice": { "main": [[{ "node": "Is Voice?", "type": "main", "index": 0 }]] },
+    "Is Voice?": { "main": [[{ "node": "Download Audio", "type": "main", "index": 0 }]] },
+    "Download Audio": { "main": [[{ "node": "Transcribe Whisper", "type": "main", "index": 0 }]] },
+    "Transcribe Whisper": { "main": [[{ "node": "Extract Events", "type": "main", "index": 0 }]] },
+    "Extract Events": { "main": [[{ "node": "Save Availability", "type": "main", "index": 0 }]] }
+  }
+}

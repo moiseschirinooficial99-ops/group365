@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
+
+:root {
+  --green: #1B7F6F;
+  --green-dark: #1A5C47;
+  --gold: #C9A84C;
+  --gold-light: #E8D5A3;
+  --black: #0A0A0A;
+  --card: #111827;
+  --card-hover: #1a2535;
+  --text: #F8F6F1;
+  --muted: #9CA3AF;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--black);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { font-family: 'Playfair Display', serif; }
+
+@layer components {
+  .btn-primary {
+    @apply bg-[#C9A84C] hover:bg-[#E8D5A3] text-[#0A0A0A] font-semibold
+           px-6 py-3 rounded-lg transition-all duration-200
+           hover:scale-[1.03] active:scale-[0.98] cursor-pointer;
+  }
+  .btn-outline {
+    @apply border border-[#C9A84C] text-[#C9A84C] hover:bg-[#C9A84C]
+           hover:text-[#0A0A0A] font-semibold px-6 py-3 rounded-lg
+           transition-all duration-200 cursor-pointer;
+  }
+  .card {
+    @apply bg-[#111827] border-l-4 border-l-[#C9A84C]
+           border border-[#C9A84C]/10 rounded-xl
+           transition-all duration-300 hover:border-[#C9A84C]/30
+           hover:bg-[#1a2535];
+  }
+  .gold-text {
+    @apply bg-gradient-to-r from-[#C9A84C] to-[#E8D5A3]
+           bg-clip-text text-transparent;
+  }
+  .green-text { color: var(--green); }
+  .input {
+    @apply w-full bg-[#0A0A0A] border border-[#C9A84C]/20 rounded-lg
+           px-4 py-3 text-white placeholder-gray-600
+           focus:border-[#C9A84C] focus:outline-none transition-colors;
+  }
+  .section { @apply py-20 px-4; }
+  .container { @apply max-w-7xl mx-auto; }
+}
