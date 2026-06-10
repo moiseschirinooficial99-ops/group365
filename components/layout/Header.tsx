@@ -26,7 +26,7 @@ export default function Header() {
     }`}>
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
-          <img src="/logo.png" alt="GROUP 360" width={64} height={64} className="rounded-lg w-[52px] h-[52px] md:w-16 md:h-16" />
+          <img src="/logo.png" alt="GROUP 360" width={64} height={64} className="rounded-lg w-[52px] h-[52px] md:w-16 md:h-16" style={{ mixBlendMode: 'lighten' }} />
           <div className="hidden sm:block">
             <span className="font-playfair font-bold text-lg tracking-wide">
               <span className="text-[#1B7F6F]">GROUP</span>

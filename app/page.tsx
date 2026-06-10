@@ -139,6 +139,7 @@ export default function HomePage() {
                 }}
                 style={{
                   filter: 'drop-shadow(0 0 20px rgba(201,168,76,0.4))',
+                  mixBlendMode: 'lighten',
                   width: 200,
                   height: 200,
                 }}
