@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
 
 const NAV = [
-  { href: '/alquileres', label: '🏖️ Alquileres' },
-  { href: '/compras', label: '🏠 Compras' },
-  { href: '/inversores', label: '💰 Inversores' },
+  { href: '/alquileres', label: 'Alquileres' },
+  { href: '/compras', label: 'Compras' },
+  { href: '/inversores', label: 'Inversores' },
 ]
 
 export default function Header() {
@@ -21,34 +21,34 @@ export default function Header() {
   }, [])
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled ? 'bg-[#0A0A0A]/95 backdrop-blur-md shadow-lg shadow-black/50' : 'bg-transparent'
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      scrolled ? 'bg-[#0F1419]/95 backdrop-blur-md shadow-lg shadow-black/30' : 'bg-transparent'
     }`}>
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
-          <img src="/logo.png" alt="360GROUP" width={40} height={40} className="rounded-lg" />
+          <img src="/logo.png" alt="GROUP 360" width={38} height={38} className="rounded-lg" />
           <div className="hidden sm:block">
-            <span className="font-playfair font-bold text-lg">
-              <span className="green-text">GROUP</span>
+            <span className="font-playfair font-bold text-lg tracking-wide">
+              <span className="text-[#1B7F6F]">GROUP</span>
               <span className="gold-text"> 360</span>
             </span>
-            <div className="text-[9px] tracking-[0.2em] text-gray-500 uppercase">Iniciativas</div>
+            <div className="text-[8px] tracking-[0.25em] text-[#8B96A5] uppercase">Iniciativas</div>
           </div>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-8">
           {NAV.map(item => (
             <Link key={item.href} href={item.href}
-              className="text-sm text-gray-300 hover:text-[#C9A84C] transition-colors">
+              className="text-sm text-[#8B96A5] hover:text-white transition-colors tracking-wide">
               {item.label}
             </Link>
           ))}
-          <Link href="/inversores/register" className="btn-primary text-sm px-5 py-2">
+          <Link href="/inversores/register" className="btn-primary text-xs px-5 py-2.5 tracking-wider">
             Acceso Inversores
           </Link>
         </nav>
 
-        <button className="md:hidden text-white p-2" onClick={() => setOpen(!open)}>
+        <button className="md:hidden text-white/60 hover:text-white p-2 transition-colors" onClick={() => setOpen(!open)}>
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
@@ -59,16 +59,16 @@ export default function Header() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-[#111827] border-t border-[#C9A84C]/10 px-4 py-4 space-y-3"
+            className="md:hidden bg-[#0F1419]/98 backdrop-blur-md border-t border-white/5 px-6 py-6 space-y-4"
           >
             {NAV.map(item => (
               <Link key={item.href} href={item.href}
-                className="block text-gray-300 hover:text-[#C9A84C] py-2"
+                className="block text-[#8B96A5] hover:text-white py-2 text-sm tracking-wide transition-colors"
                 onClick={() => setOpen(false)}>
                 {item.label}
               </Link>
             ))}
-            <Link href="/inversores/register" className="btn-primary block text-center"
+            <Link href="/inversores/register" className="btn-primary block text-center text-sm"
               onClick={() => setOpen(false)}>
               Acceso Inversores
             </Link>

@@ -1,16 +1,16 @@
 'use client'
 import { motion } from 'framer-motion'
-import { Bed, Bath, Maximize2, TrendingUp } from 'lucide-react'
+import { Bed, Bath, Maximize2, MapPin } from 'lucide-react'
 
-const CHANNEL_BADGE: Record<string, { label: string; color: string }> = {
-  exp:      { label: 'eXp Realty',    color: 'bg-blue-900/60 text-blue-300' },
-  personal: { label: 'Exclusivo',     color: 'bg-purple-900/60 text-purple-300' },
-  bancaria: { label: '🏦 Banco -20%', color: 'bg-red-900/60 text-red-300' },
-  alquiler: { label: '🏖️ Turístico',  color: 'bg-green-900/60 text-green-300' },
+const CHANNEL_LABEL: Record<string, string> = {
+  exp:      'eXp Realty',
+  personal: 'Exclusivo',
+  bancaria: 'Bancaria',
+  alquiler: 'Turístico',
 }
 
 export default function PropertyCard({ property }: { property: any }) {
-  const badge = CHANNEL_BADGE[property.channel] || CHANNEL_BADGE.exp
+  const label = CHANNEL_LABEL[property.channel] || 'eXp Realty'
   const isExp = property.channel === 'exp'
   const expUrl = `https://www.expglobalspain.com?ref=360group&agent=${process.env.NEXT_PUBLIC_EXP_AGENT_ID || ''}`
   const waText = encodeURIComponent(`Hola, me interesa la propiedad: ${property.title} (€${Number(property.price).toLocaleString('es-ES')})`)
@@ -20,57 +20,59 @@ export default function PropertyCard({ property }: { property: any }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -6 }}
-      transition={{ duration: 0.3 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5 }}
       className="card overflow-hidden group"
     >
-      <div className="relative h-52 overflow-hidden">
+      <div className="relative h-56 overflow-hidden">
         <img
           src={property.main_image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800'}
           alt={property.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <div className="absolute top-3 left-3">
-          <span className={`text-xs px-3 py-1 rounded-full font-medium ${badge.color}`}>
-            {badge.label}
+        <div className="absolute top-4 left-4">
+          <span className="text-xs px-2.5 py-1 bg-black/40 backdrop-blur-sm border border-white/10 text-white/80 rounded-full">
+            {label}
           </span>
         </div>
-        <div className="absolute top-3 right-3 bg-[#C9A84C] text-[#0A0A0A] text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-          <TrendingUp size={10} /> {property.estimated_roi}%
+        {property.estimated_roi && (
+          <div className="absolute top-4 right-4 bg-[#C9A84C] text-[#0F1419] text-xs font-bold px-2.5 py-1 rounded-full">
+            {property.estimated_roi}% ROI
+          </div>
+        )}
+        <div className="absolute bottom-4 left-4">
+          <div className="font-playfair text-xl font-bold text-white">
+            €{Number(property.price).toLocaleString('es-ES')}
+          </div>
+          {property.yearly_rent && (
+            <div className="text-xs text-white/60 mt-0.5">
+              ~€{Number(property.yearly_rent).toLocaleString('es-ES')}/año
+            </div>
+          )}
         </div>
       </div>
 
       <div className="p-5">
-        <h3 className="font-playfair font-bold text-base mb-1 line-clamp-1">{property.title}</h3>
-        <p className="text-gray-500 text-sm mb-3">📍 {property.location}</p>
-
-        <div className="flex gap-4 text-sm text-gray-500 mb-4">
-          <span className="flex items-center gap-1"><Bed size={13} /> {property.bedrooms}</span>
-          <span className="flex items-center gap-1"><Bath size={13} /> {property.bathrooms}</span>
-          <span className="flex items-center gap-1"><Maximize2 size={13} /> {property.area_sqm}m²</span>
+        <h3 className="font-playfair font-bold text-base mb-2 line-clamp-1">{property.title}</h3>
+        <div className="flex items-center gap-1.5 text-[#8B96A5] text-sm mb-4">
+          <MapPin size={12} />
+          <span>{property.location}</span>
         </div>
 
-        <div className="flex items-end justify-between mb-4">
-          <div>
-            <div className="text-xl font-bold gold-text">
-              €{Number(property.price).toLocaleString('es-ES')}
-            </div>
-            {property.yearly_rent && (
-              <div className="text-xs text-gray-500">
-                ~€{Number(property.yearly_rent).toLocaleString('es-ES')}/año
-              </div>
-            )}
-          </div>
+        <div className="flex gap-5 text-sm text-[#8B96A5] mb-5 pb-4 border-b border-white/5">
+          <span className="flex items-center gap-1.5"><Bed size={13} /> {property.bedrooms}</span>
+          <span className="flex items-center gap-1.5"><Bath size={13} /> {property.bathrooms}</span>
+          <span className="flex items-center gap-1.5"><Maximize2 size={13} /> {property.area_sqm}m²</span>
         </div>
 
         <a
           href={isExp ? expUrl : waUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="btn-primary w-full text-center text-sm py-2.5 block rounded-lg"
+          className="btn-outline w-full text-center text-xs py-2.5 block"
         >
-          {isExp ? 'Ver en eXp Realty →' : 'Contactar por WhatsApp →'}
+          {isExp ? 'Ver en eXp Realty' : 'Contactar'}
         </a>
       </div>
     </motion.div>
