@@ -316,6 +316,20 @@ export default function HomePage() {
       {/* ── 4. SERVICES NUMBERED ── */}
       <section className="py-24 px-6 bg-[#161D26]/40">
         <div className="max-w-7xl mx-auto">
+          {/* Logo flotante 3D */}
+          <div className="flex justify-center mb-14">
+            <motion.img
+              src="/logo.png"
+              alt="GROUP 360"
+              width={180}
+              height={180}
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ filter: 'drop-shadow(0 0 30px rgba(201,168,76,0.3))', width: 180, height: 180, mixBlendMode: 'lighten' }}
+              className="object-contain"
+            />
+          </div>
+
           <motion.div variants={ST} initial="hidden" whileInView="show" viewport={{ once: true }} className="mb-14">
             <motion.p variants={FU} className="text-[#1B7F6F] text-xs font-semibold tracking-[0.4em] uppercase mb-3">
               Explora Nuestros Servicios

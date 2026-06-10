@@ -3,19 +3,16 @@ import { motion } from 'framer-motion'
 import { Bed, Bath, Maximize2, MapPin, ArrowRight } from 'lucide-react'
 
 const CHANNEL_LABEL: Record<string, string> = {
-  exp:      'eXp Realty',
+  exp:      'Disponible',
   personal: 'Villa',
   bancaria: 'Bancaria',
   alquiler: 'Turístico',
 }
 
 export default function PropertyCard({ property }: { property: any }) {
-  const label = CHANNEL_LABEL[property.channel] || 'eXp Realty'
-  const isExp = property.channel === 'exp'
-  const expUrl = `https://www.expglobalspain.com?ref=360group&agent=${process.env.NEXT_PUBLIC_EXP_AGENT_ID || ''}`
+  const label = CHANNEL_LABEL[property.channel] || 'Disponible'
   const waText = encodeURIComponent(`Hola, me interesa la propiedad: ${property.title} (€${Number(property.price).toLocaleString('es-ES')})`)
   const waUrl = `https://wa.me/${(process.env.AGENT_WHATSAPP || '34600000000').replace(/\D/g, '')}?text=${waText}`
-  const href = isExp ? expUrl : waUrl
 
   return (
     <motion.div
@@ -25,13 +22,13 @@ export default function PropertyCard({ property }: { property: any }) {
       transition={{ duration: 0.5 }}
       className="card overflow-hidden group"
     >
-      <a href={href} target="_blank" rel="noopener noreferrer" className="block">
+      <a href={waUrl} target="_blank" rel="noopener noreferrer" className="block">
         {/* Image */}
         <div className="relative h-60 overflow-hidden">
           <img
             src={property.main_image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800'}
             alt={property.title}
-            className="w-full h-full object-cover group-hover:scale-107 transition-transform duration-700 ease-out"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent" />
           <div className="absolute top-4 left-4">

@@ -78,9 +78,11 @@ export default function AlquileresPage() {
 
             {sent ? (
               <div className="card p-10 text-center">
-                <div className="text-5xl mb-4">✅</div>
-                <h3 className="font-playfair text-2xl font-bold mb-2">¡Solicitud recibida!</h3>
-                <p className="text-gray-400">Te contactamos en menos de 2 horas.</p>
+                <div className="w-14 h-14 rounded-full bg-[#1B7F6F]/15 border border-[#1B7F6F]/30 flex items-center justify-center mx-auto mb-5">
+                  <span className="text-[#1B7F6F] text-2xl font-bold">✓</span>
+                </div>
+                <h3 className="font-playfair text-2xl font-bold mb-2">Solicitud recibida</h3>
+                <p className="text-[#8B96A5]">Te contactamos en menos de 2 horas.</p>
               </div>
             ) : (
               <form onSubmit={submit} className="card p-8 space-y-4">
