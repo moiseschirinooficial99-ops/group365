@@ -194,7 +194,7 @@ export default function InversoresPage() {
               </Link>
               <p className="text-[#8B96A5] text-xs mt-5">
                 ¿Ya tienes cuenta?{' '}
-                <Link href="/inversores/dashboard" className="text-[#C9A84C] hover:underline">Acceder al dashboard</Link>
+                <Link href="/inversores/register" className="text-[#C9A84C] hover:underline">Acceder al dashboard</Link>
               </p>
             </motion.div>
           </motion.div>

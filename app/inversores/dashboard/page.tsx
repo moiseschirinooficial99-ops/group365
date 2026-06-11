@@ -15,11 +15,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/inversores'); return }
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/inversores/register')
+        return
+      }
 
       const [{ data: p }, { data: props }] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', user.id).single(),
+        supabase.from('profiles').select('*').eq('id', session.user.id).single(),
         supabase.from('properties').select('*').eq('is_active', true)
           .order('estimated_roi', { ascending: false }).limit(6),
       ])
@@ -65,7 +68,7 @@ export default function Dashboard() {
               <div className="text-gray-600 text-xs">Plazo</div>
             </div>
           </div>
-          <button onClick={async () => { await supabase.auth.signOut(); router.push('/inversores') }}
+          <button onClick={async () => { await supabase.auth.signOut(); router.push('/inversores/register') }}
             className="text-gray-600 hover:text-red-400 text-xs transition-colors">
             Cerrar sesión
           </button>
