@@ -20,7 +20,7 @@ export default function Footer() {
     <footer className="bg-[#0D1117] border-t border-white/5 pt-16 pb-8 px-4">
       <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-12 mb-12">
 
-        {/* Column 1: Brand + Newsletter */}
+        {/* Columna 1: Marca + Newsletter */}
         <div>
           <div className="font-playfair text-xl font-bold mb-1">
             <span className="text-[#1B7F6F]">GROUP</span>
@@ -30,8 +30,11 @@ export default function Footer() {
           <p className="text-[#8B96A5] text-sm leading-relaxed mb-2">
             Visión 360° del mercado inmobiliario. Propiedades premium, inversiones y alquileres en España.
           </p>
-          <p className="text-[#8B96A5] text-xs mb-6">
+          <p className="text-[#8B96A5] text-xs mb-2">
             GRUPO 360 INICIATIVAS S.L. · NIF: B13911979
+          </p>
+          <p className="text-[#8B96A5] text-xs mb-6">
+            Passeig de Les Palmeres 16, Reus, Tarragona
           </p>
           {done ? (
             <p className="text-[#1B7F6F] text-sm">Suscrito. Te mantendremos informado.</p>
@@ -52,7 +55,7 @@ export default function Footer() {
           )}
         </div>
 
-        {/* Column 2: Links */}
+        {/* Columna 2: Links */}
         <div>
           <h4 className="text-white font-semibold text-xs tracking-[0.2em] uppercase mb-5">Links Útiles</h4>
           <ul className="space-y-3 text-sm text-[#8B96A5]">
@@ -61,10 +64,11 @@ export default function Footer() {
             <li><Link href="/alquileres" className="hover:text-white transition-colors">Alquileres Turísticos</Link></li>
             <li><Link href="/inversores" className="hover:text-white transition-colors">Portal Inversores</Link></li>
             <li><Link href="/inversores/register" className="hover:text-white transition-colors">Registro Inversor</Link></li>
+            <li><Link href="/inversores/login" className="hover:text-white transition-colors">Acceso Inversor</Link></li>
           </ul>
         </div>
 
-        {/* Column 3: Contact + Social */}
+        {/* Columna 3: Contacto + Redes */}
         <div>
           <h4 className="text-white font-semibold text-xs tracking-[0.2em] uppercase mb-5">Contacto</h4>
           <ul className="space-y-3 text-sm text-[#8B96A5] mb-8">
@@ -74,23 +78,34 @@ export default function Footer() {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-[#1B7F6F] text-xs font-semibold shrink-0 pt-0.5">WA</span>
-              <a href="https://wa.me/34600000000" target="_blank" rel="noopener noreferrer"
-                className="hover:text-white transition-colors">+34 600 000 000</a>
+              <a href="https://wa.me/34XXXXXXXXX" target="_blank" rel="noopener noreferrer"
+                className="hover:text-white transition-colors">+34 XXX XXX XXX</a>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-[#1B7F6F] text-xs font-semibold shrink-0 pt-0.5">ES</span>
               <span>Passeig de Les Palmeres 16,<br />Reus, Tarragona</span>
             </li>
           </ul>
+
           <h4 className="text-white font-semibold text-xs tracking-[0.2em] uppercase mb-4">Redes Sociales</h4>
           <ul className="space-y-2.5 text-sm text-[#8B96A5]">
             <li>
               <a href="https://www.instagram.com/group360iniciativas" target="_blank" rel="noopener noreferrer"
-                className="hover:text-white transition-colors">Instagram</a>
+                className="flex items-center gap-2 hover:text-white transition-colors">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+                Instagram
+              </a>
             </li>
             <li>
               <a href="https://www.tiktok.com/@group360iniciativas" target="_blank" rel="noopener noreferrer"
-                className="hover:text-white transition-colors">TikTok</a>
+                className="flex items-center gap-2 hover:text-white transition-colors">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.79 1.52V6.76a4.85 4.85 0 01-1.02-.07z"/>
+                </svg>
+                TikTok
+              </a>
             </li>
           </ul>
         </div>
@@ -98,10 +113,10 @@ export default function Footer() {
 
       <div className="max-w-7xl mx-auto pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-3">
         <p className="text-[#8B96A5] text-xs">
-          © 2024 GRUPO 360 INICIATIVAS S.L. Todos los derechos reservados.
+          © 2025-2026 GRUPO 360 INICIATIVAS S.L. · NIF B13911979 · Todos los derechos reservados.
         </p>
         <a href="https://macdestudios.com" target="_blank" rel="noopener noreferrer"
-          className="text-[#8B96A5] text-xs hover:text-[#C9A84C] transition-colors">
+          className="text-xs text-[#8B96A5] hover:text-[#C9A84C] transition-colors">
           Desarrollo y producción por macdestudios.com
         </a>
       </div>

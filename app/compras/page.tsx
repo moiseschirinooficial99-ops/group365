@@ -42,7 +42,7 @@ export default function ComprasPage() {
               Tu Propiedad Ideal<br /><span className="gold-text">En España</span>
             </h1>
             <p className="text-gray-300 text-lg">
-              Cartera eXp Realty, bancarias con descuento y exclusivos off-market.
+              Propiedades premium, bancarias con descuento y exclusivos off-market.
             </p>
           </motion.div>
         </div>
@@ -56,7 +56,7 @@ export default function ComprasPage() {
                 className={`px-5 py-2 rounded-full text-sm font-medium transition-all capitalize ${
                   channel === c ? 'bg-[#C9A84C] text-[#0A0A0A] font-bold' : 'bg-[#111827] text-gray-400 hover:text-white border border-[#C9A84C]/10'
                 }`}>
-                {c === 'all' ? 'Todas' : c === 'exp' ? 'eXp Realty' : c === 'bancaria' ? '🏦 Bancarias' : c === 'alquiler' ? '🏖️ Turísticas' : '⭐ Exclusivas'}
+                {c === 'all' ? 'Todas' : c === 'exp' ? 'Disponibles' : c === 'bancaria' ? '🏦 Bancarias' : c === 'alquiler' ? '🏖️ Turísticas' : '⭐ Exclusivas'}
               </button>
             ))}
           </div>

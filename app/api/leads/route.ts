@@ -1,22 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { scoreLead } from '@/lib/scoring'
-
-async function notifyAgent(lead: any, score: number, redirect: string) {
-  const token = process.env.WHATSAPP_TOKEN
-  const phoneId = process.env.WHATSAPP_PHONE_ID
-  const agentPhone = (process.env.AGENT_WHATSAPP || '').replace(/\D/g, '')
-  if (!token || !phoneId || !agentPhone) return
-
-  const emoji = redirect === 'exp' ? '🔵' : redirect === 'personal' ? '🟠' : '🟢'
-  const msg = `${emoji} *NUEVO LEAD — 360GROUP*\n\n👤 ${lead.name || 'Sin nombre'}\n📧 ${lead.email || '-'}\n📱 ${lead.phone || '-'}\n💰 Presupuesto: €${lead.budget_max || '-'}\n📍 Zona: ${lead.preferred_zone || '-'}\n📊 Score: ${score}%\n🎯 Ruta: ${redirect.toUpperCase()}\n📌 Fuente: ${lead.source}`
-
-  await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messaging_product: 'whatsapp', to: agentPhone, type: 'text', text: { body: msg } }),
-  }).catch(() => {})
-}
+import { notifyNewLead, notifyHotLead } from '@/lib/notifications'
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,11 +15,14 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error
 
-    await notifyAgent(body, score, redirect)
+    // Notifications (non-blocking)
+    notifyNewLead({ ...body, scoring_result: score }).catch(() => {})
+    if (score > 70) notifyHotLead({ ...body, scoring_result: score }).catch(() => {})
 
+    // n8n webhook (non-blocking)
     const n8nUrl = process.env.N8N_WEBHOOK_URL
     if (n8nUrl) {
-      await fetch(`${n8nUrl}/new-lead`, {
+      fetch(`${n8nUrl}/new-lead`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lead, score, redirect }),
@@ -48,8 +36,14 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
-  const { data } = await supabaseAdmin.from('leads').select('*').order('created_at', { ascending: false })
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const hot = searchParams.get('hot')
+
+  let query = supabaseAdmin.from('leads').select('*').order('created_at', { ascending: false })
+  if (hot) query = query.gt('scoring_result', 70)
+
+  const { data } = await query
   return NextResponse.json(data || [])
 }
 
