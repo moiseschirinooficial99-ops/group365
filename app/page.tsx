@@ -83,7 +83,7 @@ const SERVICES_LIST = [
 
 const PROPERTIES = [
   { id: '1', title: 'Villa Exclusiva Marbella', price: 650000, location: 'Marbella, Costa del Sol', bedrooms: 5, bathrooms: 4, area_sqm: 380, estimated_roi: 6.0, yearly_rent: 39000, channel: 'personal', main_image: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800' },
-  { id: '2', title: 'Apartamento Premium Madrid', price: 480000, location: 'Madrid, Salamanca', bedrooms: 3, bathrooms: 2, area_sqm: 145, estimated_roi: 5.0, yearly_rent: 24000, channel: 'exp', main_image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800' },
+  { id: '2', title: 'Apartamento Premium Madrid', price: 480000, location: 'Madrid, Salamanca', bedrooms: 3, bathrooms: 2, area_sqm: 145, estimated_roi: 5.0, yearly_rent: 24000, channel: 'personal', main_image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800' },
   { id: '3', title: 'Atico Frente al Mar', price: 890000, location: 'Barcelona, Barceloneta', bedrooms: 4, bathrooms: 3, area_sqm: 220, estimated_roi: 5.5, yearly_rent: 48900, channel: 'personal', main_image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800' },
 ]
 

@@ -7,14 +7,14 @@ import PropertyCard from '@/components/cards/PropertyCard'
 
 const ALL_PROPERTIES = [
   { id: '1', title: 'Villa Exclusiva Marbella', price: 650000, location: 'Marbella, Málaga', bedrooms: 5, bathrooms: 4, area_sqm: 380, estimated_roi: 6.0, yearly_rent: 39000, channel: 'personal', main_image: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800' },
-  { id: '2', title: 'Apartamento Premium Madrid', price: 480000, location: 'Madrid', bedrooms: 3, bathrooms: 2, area_sqm: 145, estimated_roi: 5.0, yearly_rent: 24000, channel: 'exp', main_image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800' },
+  { id: '2', title: 'Apartamento Premium Madrid', price: 480000, location: 'Madrid', bedrooms: 3, bathrooms: 2, area_sqm: 145, estimated_roi: 5.0, yearly_rent: 24000, channel: 'personal', main_image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800' },
   { id: '3', title: 'Villa Turística Costa del Sol', price: 380000, location: 'Estepona, Málaga', bedrooms: 4, bathrooms: 3, area_sqm: 250, estimated_roi: 6.0, yearly_rent: 22800, channel: 'alquiler', main_image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800' },
   { id: '4', title: 'Piso Bancario Barcelona', price: 210000, location: 'Barcelona', bedrooms: 2, bathrooms: 1, area_sqm: 85, estimated_roi: 5.7, yearly_rent: 12000, channel: 'bancaria', main_image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800' },
-  { id: '5', title: 'Apartamento Valencia Playa', price: 165000, location: 'Valencia', bedrooms: 2, bathrooms: 1, area_sqm: 68, estimated_roi: 6.0, yearly_rent: 9900, channel: 'exp', main_image: 'https://images.unsplash.com/photo-1555636222-cae831e670b3?w=800' },
+  { id: '5', title: 'Apartamento Valencia Playa', price: 165000, location: 'Valencia', bedrooms: 2, bathrooms: 1, area_sqm: 68, estimated_roi: 6.0, yearly_rent: 9900, channel: 'personal', main_image: 'https://images.unsplash.com/photo-1555636222-cae831e670b3?w=800' },
   { id: '6', title: 'Ático Panorámico Alicante', price: 295000, location: 'Alicante', bedrooms: 3, bathrooms: 2, area_sqm: 120, estimated_roi: 5.1, yearly_rent: 15000, channel: 'personal', main_image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800' },
 ]
 
-const CHANNELS = ['all', 'exp', 'personal', 'bancaria', 'alquiler']
+const CHANNELS = ['all', 'personal', 'bancaria', 'alquiler']
 const FADE_UP = {
   hidden: { opacity: 0, y: 30 },
   show: { opacity: 1, y: 0, transition: { duration: 0.6 } },
@@ -56,7 +56,7 @@ export default function ComprasPage() {
                 className={`px-5 py-2 rounded-full text-sm font-medium transition-all capitalize ${
                   channel === c ? 'bg-[#C9A84C] text-[#0A0A0A] font-bold' : 'bg-[#111827] text-gray-400 hover:text-white border border-[#C9A84C]/10'
                 }`}>
-                {c === 'all' ? 'Todas' : c === 'exp' ? 'Disponibles' : c === 'bancaria' ? '🏦 Bancarias' : c === 'alquiler' ? '🏖️ Turísticas' : '⭐ Exclusivas'}
+                {c === 'all' ? 'Todas' : c === 'bancaria' ? '🏦 Bancarias' : c === 'alquiler' ? '🏖️ Turísticas' : '⭐ Exclusivas'}
               </button>
             ))}
           </div>

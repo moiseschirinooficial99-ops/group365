@@ -12,7 +12,7 @@ const CHANNEL_LABEL: Record<string, string> = {
 export default function PropertyCard({ property }: { property: any }) {
   const label = CHANNEL_LABEL[property.channel] || 'Disponible'
   const waText = encodeURIComponent(`Hola, me interesa la propiedad: ${property.title} (€${Number(property.price).toLocaleString('es-ES')})`)
-  const agentPhone = (process.env.NEXT_PUBLIC_AGENT_WHATSAPP || '34XXXXXXXXX').replace(/\D/g, '')
+  const agentPhone = (process.env.NEXT_PUBLIC_AGENT_WHATSAPP || '34611251818').replace(/\D/g, '')
   const waUrl = `https://wa.me/${agentPhone}?text=${waText}`
 
   return (

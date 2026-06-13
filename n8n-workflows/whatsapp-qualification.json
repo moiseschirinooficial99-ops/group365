@@ -1,98 +1,84 @@
-{
-  "name": "360GROUP — WhatsApp Qualification Bot",
+﻿{
+  "name": "whatsapp-qualification",
   "nodes": [
     {
-      "name": "WA Webhook",
+      "parameters": { "path": "whatsapp-qualify", "options": {}, "httpMethod": "POST" },
+      "id": "wh-wapp",
+      "name": "Webhook WhatsApp",
       "type": "n8n-nodes-base.webhook",
-      "parameters": {
-        "path": "wa-qualify-360",
-        "httpMethod": "POST",
-        "responseMode": "onReceived"
-      },
+      "typeVersion": 1,
       "position": [240, 300]
     },
     {
-      "name": "Extract Message",
-      "type": "n8n-nodes-base.code",
       "parameters": {
-        "jsCode": "const body = $input.first().json;\nconst msg = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];\nif (!msg) return [];\nreturn [{ json: { from: msg.from, text: msg.text?.body || '', type: msg.type, waId: msg.id } }];"
+        "jsCode": "const body = $input.first().json;\nconst msg = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];\nif (!msg || msg.type !== 'text') return [{ json: { skip: true } }];\nreturn [{ json: { from: msg.from, text: msg.text?.body || '', messageId: msg.id } }];"
       },
+      "id": "extract-msg",
+      "name": "Extraer mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [460, 300]
     },
     {
-      "name": "Qualify with AI",
-      "type": "@n8n/n8n-nodes-langchain.openAi",
       "parameters": {
         "model": "gpt-4o-mini",
         "messages": {
           "values": [
-            {
-              "role": "system",
-              "content": "Eres asesor inmobiliario de GROUP 360 INICIATIVAS. Tu misión: calificar leads inmobiliarios y orientarlos hacia la mejor opción.\n\nSiempre en español, profesional y cercano.\n\nCuando el usuario pregunte por propiedades:\n1. Pregunta su presupuesto (si no lo dijo)\n2. Pregunta la zona de interés\n3. Pregunta si es para compra, inversión o alquiler\n\nSi tiene presupuesto €80k-€350k → es candidato eXp Realty\nSi tiene presupuesto >€350k → es candidato exclusivo personal\nSi busca rentabilidad → invítalo al portal de inversores\n\nMáximo 3 líneas por respuesta. No hagas promesas de precio exacto.\nSi la consulta es urgente o compleja, di que un especialista le llamará en menos de 2 horas."
-            },
-            {
-              "role": "user",
-              "content": "={{$json.text}}"
-            }
+            { "role": "system", "content": "Eres el asistente de GROUP 360 INICIATIVAS. Califica este mensaje de WhatsApp: ¿busca comprar, alquilar o invertir? ¿cuál es su presupuesto estimado? Responde en JSON: { intent, budget, score (0-100), summary }" },
+            { "role": "user", "content": "={{ $json.text }}" }
           ]
-        }
+        },
+        "options": { "maxTokens": 200 }
       },
+      "id": "openai-qualify",
+      "name": "OpenAI Califica Lead",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
       "position": [680, 300]
     },
     {
-      "name": "Score Lead",
-      "type": "n8n-nodes-base.code",
       "parameters": {
-        "jsCode": "const text = $node['Extract Message'].json.text.toLowerCase();\nlet score = 0;\nlet redirect = 'direct';\n\n// Budget detection\nconst budgetMatch = text.match(/(\\d+)[k\\s]*euros?|€\\s*(\\d+)/i);\nif (budgetMatch) {\n  const budget = parseInt(budgetMatch[1] || budgetMatch[2]) * (text.includes('k') ? 1000 : 1);\n  if (budget >= 80000 && budget <= 350000) { score += 30; redirect = 'exp'; }\n  else if (budget > 350000) { score += 22; redirect = 'personal'; }\n}\n\n// Zone detection\nconst zones = ['madrid','barcelona','marbella','costa del sol','valencia','alicante'];\nif (zones.some(z => text.includes(z))) score += 25;\n\n// Intent detection\nif (text.match(/invert|roi|rentab|beneficio/)) { score += 25; }\nif (text.match(/comprar|compra|piso|casa|apartamento/)) score += 15;\n\nreturn [{ json: { ...$input.first().json, score, redirect } }];"
-      },
-      "position": [680, 480]
-    },
-    {
-      "name": "Reply WhatsApp",
-      "type": "n8n-nodes-base.httpRequest",
-      "parameters": {
-        "method": "POST",
-        "url": "=https://graph.facebook.com/v18.0/{{$env.WA_PHONE_ID}}/messages",
-        "headers": {
-          "Authorization": "=Bearer {{$env.WA_TOKEN}}",
-          "Content-Type": "application/json"
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/leads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_ANON_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
         },
-        "body": "={\"messaging_product\":\"whatsapp\",\"to\":\"{{$node['Extract Message'].json.from}}\",\"type\":\"text\",\"text\":{\"body\":\"{{$node['Qualify with AI'].json.message.content}}\"}}"
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "phone", "value": "={{ $('Extraer mensaje').first().json.from }}" },
+            { "name": "source", "value": "whatsapp" },
+            { "name": "notes", "value": "={{ $json.message.content }}" }
+          ]
+        }
       },
+      "id": "save-lead",
+      "name": "Guardar Lead en Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
       "position": [900, 300]
     },
     {
-      "name": "Save Lead",
-      "type": "n8n-nodes-base.httpRequest",
-      "parameters": {
-        "method": "POST",
-        "url": "={{$env.SUPABASE_URL}}/rest/v1/leads",
-        "headers": {
-          "apikey": "={{$env.SUPABASE_KEY}}",
-          "Authorization": "=Bearer {{$env.SUPABASE_KEY}}",
-          "Content-Type": "application/json",
-          "Prefer": "return=representation"
-        },
-        "body": "={\"phone\":\"{{$node['Extract Message'].json.from}}\",\"message\":\"{{$node['Extract Message'].json.text}}\",\"source\":\"whatsapp\",\"scoring_result\":{{$node['Score Lead'].json.score}},\"redirect_type\":\"{{$node['Score Lead'].json.redirect}}\",\"status\":\"new\"}"
-      },
-      "position": [900, 480]
+      "parameters": { "respondWith": "json", "responseBody": "{ \"ok\": true }" },
+      "id": "respond-wapp",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300]
     }
   ],
   "connections": {
-    "WA Webhook": {
-      "main": [[{ "node": "Extract Message", "type": "main", "index": 0 }]]
-    },
-    "Extract Message": {
-      "main": [
-        [{ "node": "Qualify with AI", "type": "main", "index": 0 }],
-        [{ "node": "Score Lead", "type": "main", "index": 0 }]
-      ]
-    },
-    "Qualify with AI": {
-      "main": [[{ "node": "Reply WhatsApp", "type": "main", "index": 0 }]]
-    },
-    "Score Lead": {
-      "main": [[{ "node": "Save Lead", "type": "main", "index": 0 }]]
-    }
-  }
+    "Webhook WhatsApp": { "main": [[{ "node": "Extraer mensaje", "type": "main", "index": 0 }]] },
+    "Extraer mensaje": { "main": [[{ "node": "OpenAI Califica Lead", "type": "main", "index": 0 }]] },
+    "OpenAI Califica Lead": { "main": [[{ "node": "Guardar Lead en Supabase", "type": "main", "index": 0 }]] },
+    "Guardar Lead en Supabase": { "main": [[{ "node": "Responder OK", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["360group", "whatsapp"]
 }

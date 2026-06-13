@@ -1,34 +1,74 @@
-{
-  "name": "360GROUP — Nuevo Lead → WhatsApp Agente",
+﻿{
+  "name": "new-lead-notification",
   "nodes": [
     {
-      "name": "Webhook Lead",
+      "parameters": { "path": "lead-score-notify", "options": {}, "httpMethod": "POST" },
+      "id": "wh-score",
+      "name": "Webhook Lead Score",
       "type": "n8n-nodes-base.webhook",
-      "parameters": { "path": "new-lead", "httpMethod": "POST", "responseMode": "onReceived" },
+      "typeVersion": 1,
       "position": [240, 300]
     },
     {
-      "name": "Format Message",
-      "type": "n8n-nodes-base.code",
       "parameters": {
-        "jsCode": "const { lead, score, redirect } = $input.first().json;\nconst emoji = redirect === 'exp' ? '🔵' : redirect === 'personal' ? '🟠' : '🟢';\nreturn [{ json: { message: `${emoji} NUEVO LEAD 360GROUP\\n\\n👤 ${lead?.name || '-'}\\n📧 ${lead?.email || '-'}\\n📱 ${lead?.phone || '-'}\\n💰 €${lead?.budget_max || '-'}\\n📊 Score: ${score}%\\n🎯 ${redirect?.toUpperCase()}`, to: process.env.AGENT_PHONE } }];"
+        "conditions": {
+          "number": [{ "value1": "={{ $json.score || $json.scoring_result || 0 }}", "operation": "larger", "value2": 70 }]
+        }
       },
+      "id": "check-score",
+      "name": "¿Score > 70?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
       "position": [460, 300]
     },
     {
-      "name": "Send WhatsApp",
-      "type": "n8n-nodes-base.httpRequest",
       "parameters": {
-        "method": "POST",
-        "url": "=https://graph.facebook.com/v18.0/{{$env.WA_PHONE_ID}}/messages",
-        "headers": { "Authorization": "=Bearer {{$env.WA_TOKEN}}", "Content-Type": "application/json" },
-        "body": "={ \"messaging_product\": \"whatsapp\", \"to\": \"{{$json.to}}\", \"type\": \"text\", \"text\": { \"body\": \"{{$json.message}}\" } }"
+        "authentication": "credentials",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=🔥 <b>LEAD CALIENTE URGENTE</b>\\n\\n👤 {{ $json.name || 'Sin nombre' }}\\n📧 {{ $json.email || '-' }}\\n📱 {{ $json.phone || '-' }}\\n📊 Score: {{ $json.score || $json.scoring_result }}%\\n💰 €{{ $json.budget_max || '-' }}\\n📌 Fuente: {{ $json.source || '-' }}\\n\\n⚡ <b>CONTACTAR INMEDIATAMENTE</b>",
+        "additionalFields": { "parse_mode": "HTML" }
       },
-      "position": [680, 300]
+      "id": "tg-hot",
+      "name": "Telegram URGENTE",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [680, 200]
+    },
+    {
+      "parameters": {
+        "authentication": "credentials",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=🔔 Nuevo lead: {{ $json.name || 'Sin nombre' }} | Score: {{ $json.score || $json.scoring_result || 0 }}% | {{ $json.source || '-' }}",
+        "additionalFields": { "parse_mode": "HTML" }
+      },
+      "id": "tg-normal",
+      "name": "Telegram normal",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [680, 400]
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "{ \"ok\": true }" },
+      "id": "respond-score",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
     }
   ],
   "connections": {
-    "Webhook Lead": { "main": [[{ "node": "Format Message", "type": "main", "index": 0 }]] },
-    "Format Message": { "main": [[{ "node": "Send WhatsApp", "type": "main", "index": 0 }]] }
-  }
+    "Webhook Lead Score": { "main": [[{ "node": "¿Score > 70?", "type": "main", "index": 0 }]] },
+    "¿Score > 70?": {
+      "main": [
+        [{ "node": "Telegram URGENTE", "type": "main", "index": 0 }],
+        [{ "node": "Telegram normal", "type": "main", "index": 0 }]
+      ]
+    },
+    "Telegram URGENTE": { "main": [[{ "node": "Responder OK", "type": "main", "index": 0 }]] },
+    "Telegram normal": { "main": [[{ "node": "Responder OK", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["360group", "leads", "notifications"]
 }

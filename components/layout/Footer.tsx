@@ -78,8 +78,8 @@ export default function Footer() {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-[#1B7F6F] text-xs font-semibold shrink-0 pt-0.5">WA</span>
-              <a href="https://wa.me/34XXXXXXXXX" target="_blank" rel="noopener noreferrer"
-                className="hover:text-white transition-colors">+34 XXX XXX XXX</a>
+              <a href="https://wa.me/34611251818" target="_blank" rel="noopener noreferrer"
+                className="hover:text-white transition-colors">+34 611 25 18 18</a>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-[#1B7F6F] text-xs font-semibold shrink-0 pt-0.5">ES</span>

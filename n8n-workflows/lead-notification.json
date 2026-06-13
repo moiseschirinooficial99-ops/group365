@@ -1,63 +1,53 @@
-{
-  "name": "360GROUP — Nuevo Lead → Notificación WhatsApp Agente",
+﻿{
+  "name": "lead-notification",
   "nodes": [
     {
-      "name": "Webhook Lead",
+      "parameters": { "path": "new-lead", "options": {} },
+      "id": "webhook-lead",
+      "name": "Webhook Nuevo Lead",
       "type": "n8n-nodes-base.webhook",
-      "parameters": {
-        "path": "new-lead",
-        "httpMethod": "POST",
-        "responseMode": "onReceived"
-      },
-      "position": [240, 300]
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "new-lead"
     },
     {
-      "name": "Format Message",
-      "type": "n8n-nodes-base.code",
       "parameters": {
-        "jsCode": "const { lead, score, redirect } = $input.first().json;\nconst emoji = redirect === 'exp' ? '🔵' : redirect === 'personal' ? '🟠' : '🟢';\nconst msg = `${emoji} *NUEVO LEAD 360GROUP*\n\n👤 ${lead?.name || '-'}\n📧 ${lead?.email || '-'}\n📱 ${lead?.phone || '-'}\n💰 Presupuesto: €${lead?.budget_max || '-'}\n📍 Zona: ${lead?.preferred_zone || '-'}\n📊 Score: ${score}%\n🎯 Ruta: ${redirect?.toUpperCase()}\n📌 Fuente: ${lead?.source}`;\nreturn [{ json: { message: msg, to: process.env.AGENT_PHONE } }];"
+        "jsCode": "const lead = $input.first().json;\nconst score = lead.score || lead.scoring_result || 0;\nconst emoji = score >= 80 ? '🔥🔥' : score >= 70 ? '🔥' : '🔔';\nreturn [{ json: { message: emoji + ' <b>Nuevo lead</b>\\n\\n👤 ' + (lead.name||'Sin nombre') + '\\n📧 ' + (lead.email||'-') + '\\n📱 ' + (lead.phone||'-') + '\\n💰 €' + (lead.budget_max||'-') + '\\n📌 ' + (lead.source||'-') + '\\n📊 Score: ' + score + '%' + (score > 70 ? '\\n⚡ CONTACTAR YA' : '') } }];"
       },
+      "id": "format-message",
+      "name": "Formatear mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [460, 300]
     },
     {
-      "name": "Send WhatsApp",
-      "type": "n8n-nodes-base.httpRequest",
       "parameters": {
-        "method": "POST",
-        "url": "=https://graph.facebook.com/v18.0/{{$env.WA_PHONE_ID}}/messages",
-        "headers": {
-          "Authorization": "=Bearer {{$env.WA_TOKEN}}",
-          "Content-Type": "application/json"
-        },
-        "body": "={\"messaging_product\":\"whatsapp\",\"to\":\"{{$json.to}}\",\"type\":\"text\",\"text\":{\"body\":\"{{$json.message}}\"}}"
+        "authentication": "credentials",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": { "parse_mode": "HTML" }
       },
+      "id": "telegram-send",
+      "name": "Enviar Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
       "position": [680, 300]
     },
     {
-      "name": "Save to Supabase",
-      "type": "n8n-nodes-base.httpRequest",
-      "parameters": {
-        "method": "PATCH",
-        "url": "={{$env.SUPABASE_URL}}/rest/v1/leads?id=eq.{{$node['Webhook Lead'].json.lead.id}}",
-        "headers": {
-          "apikey": "={{$env.SUPABASE_KEY}}",
-          "Authorization": "=Bearer {{$env.SUPABASE_KEY}}",
-          "Content-Type": "application/json"
-        },
-        "body": "={\"status\":\"contacted\",\"notes\":\"Notificado via n8n\"}"
-      },
-      "position": [680, 480]
+      "parameters": { "respondWith": "json", "responseBody": "{ \"ok\": true }" },
+      "id": "respond",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
     }
   ],
   "connections": {
-    "Webhook Lead": {
-      "main": [[{ "node": "Format Message", "type": "main", "index": 0 }]]
-    },
-    "Format Message": {
-      "main": [
-        [{ "node": "Send WhatsApp", "type": "main", "index": 0 }],
-        [{ "node": "Save to Supabase", "type": "main", "index": 0 }]
-      ]
-    }
-  }
+    "Webhook Nuevo Lead": { "main": [[{ "node": "Formatear mensaje", "type": "main", "index": 0 }]] },
+    "Formatear mensaje": { "main": [[{ "node": "Enviar Telegram", "type": "main", "index": 0 }]] },
+    "Enviar Telegram": { "main": [[{ "node": "Responder OK", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["360group", "leads"]
 }

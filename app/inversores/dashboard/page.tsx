@@ -443,7 +443,7 @@ export default function Dashboard() {
               <p className="text-[#8B96A5] text-sm mb-6">Habla directamente con tu gestor de inversiones.</p>
 
               <a
-                href={`https://wa.me/34600000000?text=Hola, soy ${profile?.name || 'un inversor'} y quiero más información sobre oportunidades de inversión.`}
+                href={`https://wa.me/34611251818?text=Hola, soy ${profile?.name || 'un inversor'} y quiero más información sobre oportunidades de inversión.`}
                 target="_blank" rel="noopener noreferrer"
                 className="flex items-center justify-center gap-3 w-full py-4 rounded-xl bg-[#25D366]/10 border border-[#25D366]/25 text-[#25D366] font-medium hover:bg-[#25D366]/20 transition-all mb-4"
               >

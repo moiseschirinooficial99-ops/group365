@@ -1,79 +1,65 @@
-{
-  "name": "360GROUP — Telegram Audio → Calendario",
+﻿{
+  "name": "telegram-calendar-sync",
   "nodes": [
     {
-      "name": "Telegram Voice",
-      "type": "n8n-nodes-base.telegramTrigger",
       "parameters": { "updates": ["message"], "additionalFields": {} },
+      "id": "tg-cal-trigger",
+      "name": "Telegram Trigger Calendario",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
       "position": [240, 300]
     },
     {
-      "name": "Is Voice?",
-      "type": "n8n-nodes-base.if",
       "parameters": {
-        "conditions": {
-          "boolean": [{ "value1": "={{$json.message.voice !== undefined}}", "value2": true }]
-        }
+        "jsCode": "const msg = $input.first().json.message;\nconst text = msg?.text || '';\nconst chatId = msg?.chat?.id;\nif (!text.startsWith('/visita')) return [{ json: { skip: true } }];\nconst parts = text.slice('/visita'.length).trim().split(' ');\nconst fechaStr = parts[0] || '';\nconst hora = parts[1] || '10:00';\nconst nombre = parts.slice(2).join(' ') || 'Lead';\nlet dateFrom;\ntry {\n  const [day, month, year] = fechaStr.includes('/') ? fechaStr.split('/') : fechaStr.split('-');\n  dateFrom = new Date(`${year || new Date().getFullYear()}-${(month||'01').padStart(2,'0')}-${(day||'01').padStart(2,'0')}T${hora}:00`);\n  if (isNaN(dateFrom.getTime())) dateFrom = new Date();\n} catch { dateFrom = new Date(); }\nconst dateTo = new Date(dateFrom.getTime() + 60 * 60 * 1000);\nreturn [{ json: { chatId, nombre, dateFrom: dateFrom.toISOString(), dateTo: dateTo.toISOString(), notes: 'Visita con ' + nombre } }];"
       },
+      "id": "parse-visita",
+      "name": "Parsear comando /visita",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [460, 300]
     },
     {
-      "name": "Download Audio",
-      "type": "n8n-nodes-base.httpRequest",
       "parameters": {
-        "method": "GET",
-        "url": "=https://api.telegram.org/bot{{$env.TG_TOKEN}}/getFile?file_id={{$json.message.voice.file_id}}"
-      },
-      "position": [680, 200]
-    },
-    {
-      "name": "Transcribe Whisper",
-      "type": "n8n-nodes-base.httpRequest",
-      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/agent_availability",
         "method": "POST",
-        "url": "https://api.openai.com/v1/audio/transcriptions",
-        "headers": { "Authorization": "=Bearer {{$env.OPENAI_KEY}}" },
-        "body": { "model": "whisper-1", "language": "es" }
-      },
-      "position": [900, 200]
-    },
-    {
-      "name": "Extract Events",
-      "type": "@n8n/n8n-nodes-langchain.openAi",
-      "parameters": {
-        "model": "gpt-4o-mini",
-        "messages": {
-          "values": [
-            {
-              "role": "system",
-              "content": "Extrae eventos de disponibilidad del texto. Devuelve JSON: { events: [{ date_from, date_to, status: available/busy, notes }] }. Formato ISO 8601 para fechas. Solo JSON."
-            },
-            { "role": "user", "content": "={{$json.text}}" }
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_ANON_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
           ]
-        }
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={{ JSON.stringify({ date_from: $json.dateFrom, date_to: $json.dateTo, notes: $json.notes, status: 'visit', source: 'telegram' }) }}"
       },
-      "position": [1120, 200]
+      "id": "insert-cal",
+      "name": "Insertar en agent_availability",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 300]
     },
     {
-      "name": "Save Availability",
-      "type": "n8n-nodes-base.httpRequest",
       "parameters": {
-        "method": "POST",
-        "url": "={{$env.SUPABASE_URL}}/rest/v1/agent_availability",
-        "headers": {
-          "apikey": "={{$env.SUPABASE_KEY}}",
-          "Authorization": "=Bearer {{$env.SUPABASE_KEY}}",
-          "Content-Type": "application/json"
-        }
+        "operation": "sendMessage",
+        "chatId": "={{ $('Parsear comando /visita').first().json.chatId }}",
+        "text": "=📅 Visita agendada: {{ $('Parsear comando /visita').first().json.notes }}"
       },
-      "position": [1340, 200]
+      "id": "tg-cal-confirm",
+      "name": "Confirmar visita",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [900, 300]
     }
   ],
   "connections": {
-    "Telegram Voice": { "main": [[{ "node": "Is Voice?", "type": "main", "index": 0 }]] },
-    "Is Voice?": { "main": [[{ "node": "Download Audio", "type": "main", "index": 0 }]] },
-    "Download Audio": { "main": [[{ "node": "Transcribe Whisper", "type": "main", "index": 0 }]] },
-    "Transcribe Whisper": { "main": [[{ "node": "Extract Events", "type": "main", "index": 0 }]] },
-    "Extract Events": { "main": [[{ "node": "Save Availability", "type": "main", "index": 0 }]] }
-  }
+    "Telegram Trigger Calendario": { "main": [[{ "node": "Parsear comando /visita", "type": "main", "index": 0 }]] },
+    "Parsear comando /visita": { "main": [[{ "node": "Insertar en agent_availability", "type": "main", "index": 0 }]] },
+    "Insertar en agent_availability": { "main": [[{ "node": "Confirmar visita", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["360group", "telegram", "calendar"]
 }

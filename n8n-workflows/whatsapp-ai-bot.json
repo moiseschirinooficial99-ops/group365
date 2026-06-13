@@ -1,52 +1,100 @@
-{
-  "name": "360GROUP — WhatsApp Bot con IA",
+﻿{
+  "name": "whatsapp-ai-bot",
   "nodes": [
     {
-      "name": "WA Webhook",
+      "parameters": { "path": "whatsapp-bot", "options": {}, "httpMethod": "POST" },
+      "id": "wh-bot",
+      "name": "Webhook WhatsApp Bot",
       "type": "n8n-nodes-base.webhook",
-      "parameters": { "path": "wa-bot-360", "httpMethod": "POST", "responseMode": "onReceived" },
+      "typeVersion": 1,
       "position": [240, 300]
     },
     {
-      "name": "Extract",
-      "type": "n8n-nodes-base.code",
       "parameters": {
-        "jsCode": "const body = $input.first().json.body;\nconst msg = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];\nif (!msg) return [];\nreturn [{ json: { from: msg.from, text: msg.text?.body || '', type: msg.type } }];"
+        "jsCode": "const body = $input.first().json;\nconst msg = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];\nif (!msg || msg.type !== 'text') return [{ json: { skip: true } }];\nreturn [{ json: { from: msg.from, text: msg.text?.body || '' } }];"
       },
+      "id": "extract-bot-msg",
+      "name": "Extraer mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [460, 300]
     },
     {
-      "name": "AI Response",
-      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/properties?is_active=eq.true&select=title,price,location,bedrooms,area_sqm,estimated_roi",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "apikey", "value": "={{ $env.SUPABASE_ANON_KEY }}" }]
+        }
+      },
+      "id": "get-props",
+      "name": "Obtener propiedades",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [460, 500]
+    },
+    {
       "parameters": {
         "model": "gpt-4o-mini",
         "messages": {
           "values": [
-            {
-              "role": "system",
-              "content": "Eres asesor inmobiliario de GROUP 360 INICIATIVAS. Misión: calificar leads y orientarlos. Siempre en español, profesional y cercano. Si preguntan por propiedades, pregunta su presupuesto y zona. Máximo 3 líneas por respuesta. No hagas promesas de precio. Si es urgente o complejo, di que un especialista les llamará."
-            },
-            { "role": "user", "content": "={{$json.text}}" }
+            { "role": "system", "content": "=Eres el asistente virtual de GROUP 360 INICIATIVAS, agencia inmobiliaria premium en España. Profesional pero cercano. Respondes siempre en español. Máximo 3 párrafos. Propiedades disponibles:\\n{{ $('Obtener propiedades').first().json.map(p => '• ' + p.title + ' | €' + p.price + ' | ' + p.location + ' | ' + p.bedrooms + 'hab | ROI: ' + (p.estimated_roi||'-') + '%').join('\\n') }}\\n\\nEmpresa: GRUPO 360 INICIATIVAS S.L., NIF B13911979, Reus, Tarragona. Nunca inventes propiedades." },
+            { "role": "user", "content": "={{ $('Extraer mensaje').first().json.text }}" }
           ]
-        }
+        },
+        "options": { "maxTokens": 500 }
       },
+      "id": "openai-reply",
+      "name": "OpenAI responde",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
       "position": [680, 300]
     },
     {
-      "name": "Reply WA",
-      "type": "n8n-nodes-base.httpRequest",
       "parameters": {
+        "url": "=https://graph.facebook.com/v18.0/{{ $env.WHATSAPP_PHONE_ID }}/messages",
         "method": "POST",
-        "url": "=https://graph.facebook.com/v18.0/{{$env.WA_PHONE_ID}}/messages",
-        "headers": { "Authorization": "=Bearer {{$env.WA_TOKEN}}", "Content-Type": "application/json" },
-        "body": "={ \"messaging_product\": \"whatsapp\", \"to\": \"{{$node.Extract.json.from}}\", \"type\": \"text\", \"text\": { \"body\": \"{{$json.message.content}}\" } }"
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.WHATSAPP_TOKEN }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('Extraer mensaje').first().json.from, type: 'text', text: { body: $json.message.content } }) }}"
       },
+      "id": "send-wapp-reply",
+      "name": "Enviar respuesta WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
       "position": [900, 300]
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "{ \"ok\": true }" },
+      "id": "respond-bot",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300]
     }
   ],
   "connections": {
-    "WA Webhook": { "main": [[{ "node": "Extract", "type": "main", "index": 0 }]] },
-    "Extract": { "main": [[{ "node": "AI Response", "type": "main", "index": 0 }]] },
-    "AI Response": { "main": [[{ "node": "Reply WA", "type": "main", "index": 0 }]] }
-  }
+    "Webhook WhatsApp Bot": { "main": [[{ "node": "Extraer mensaje", "type": "main", "index": 0 }]] },
+    "Extraer mensaje": {
+      "main": [[
+        { "node": "Obtener propiedades", "type": "main", "index": 0 },
+        { "node": "OpenAI responde", "type": "main", "index": 0 }
+      ]]
+    },
+    "OpenAI responde": { "main": [[{ "node": "Enviar respuesta WhatsApp", "type": "main", "index": 0 }]] },
+    "Enviar respuesta WhatsApp": { "main": [[{ "node": "Responder OK", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["360group", "whatsapp", "ai"]
 }
