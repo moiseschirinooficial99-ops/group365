@@ -10,7 +10,6 @@ TU PERSONALIDAD:
 - Nunca presionas, GUÍAS al cliente
 - Respondes siempre en español
 - Máximo 3 párrafos por mensaje, directo y útil
-- Usas datos reales de las propiedades del contexto
 
 SABES:
 - Todas las propiedades disponibles (se te pasan como contexto)
@@ -26,9 +25,8 @@ TU OBJETIVO:
 3. Presentar 1-2 propiedades que encajen perfectamente
 4. Resolver objeciones con datos concretos
 5. Agendar visita o llamada — siempre propón una acción concreta
-6. Si el lead es caliente (presupuesto alto, timeline corto) → escalar a humano
+6. Si el lead es caliente → escalar a humano
 
-Cuando agendes una visita, confirma fecha, hora y dirección.
 Nunca inventes propiedades que no existan en la base de datos.
 Si no tienes información, ofrece conectar con el agente humano.`
 
@@ -41,15 +39,13 @@ async function sendWA(to: string, body: string): Promise<{ ok: boolean; error?: 
   }
 
   const url = `https://graph.facebook.com/v18.0/${phoneId}/messages`
-  const payload = { messaging_product: 'whatsapp', to, type: 'text', text: { body } }
-
-  console.log('WA SEND →', { url, to, bodyPreview: body.slice(0, 80) })
+  console.log('WA SEND →', { phoneId, to, bodyPreview: body.slice(0, 80) })
 
   try {
     const res = await fetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body } }),
     })
     const json = await res.json()
     console.log('WA SEND response:', res.status, JSON.stringify(json))
@@ -57,28 +53,14 @@ async function sendWA(to: string, body: string): Promise<{ ok: boolean; error?: 
     if (!res.ok) {
       const errCode = json?.error?.code
       const errMsg = json?.error?.message || 'unknown'
-
-      // Token expirado o inválido
       if (res.status === 401 || errCode === 190) {
-        console.error('WA TOKEN EXPIRED or INVALID')
         await sendTelegramNotification(
-          `🚨 <b>WhatsApp token expirado</b>\n\nEl bot de WhatsApp no puede responder.\n\nAcción: genera un nuevo token en Meta Business y actualiza WHATSAPP_TOKEN en Vercel.\n\nError: ${errMsg}`
+          `🚨 <b>WhatsApp token expirado</b>\n\nGenera un nuevo token en Meta Business y actualiza WHATSAPP_TOKEN en Vercel.\n\nError: ${errMsg}`
         )
         return { ok: false, error: 'token_expired' }
       }
-
-      // Phone ID incorrecto
-      if (errCode === 100) {
-        console.error('WA PHONE_ID wrong or permission error:', errMsg)
-        await sendTelegramNotification(
-          `⚠️ <b>WhatsApp error de configuración</b>\n\nError ${errCode}: ${errMsg}\n\nVerifica WHATSAPP_PHONE_ID en Vercel.`
-        )
-        return { ok: false, error: errMsg }
-      }
-
       return { ok: false, error: errMsg }
     }
-
     return { ok: true }
   } catch (e: any) {
     console.error('WA SEND exception:', e.message)
@@ -91,9 +73,7 @@ export async function GET(req: NextRequest) {
   const mode = sp.get('hub.mode')
   const token = sp.get('hub.verify_token')
   const challenge = sp.get('hub.challenge')
-
-  console.log('WA VERIFY:', { mode, token, challenge })
-
+  console.log('WA VERIFY:', { mode, token: token?.slice(0, 8) })
   if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
     return new NextResponse(challenge, { status: 200 })
   }
@@ -105,58 +85,47 @@ export async function POST(req: NextRequest) {
   try {
     rawBody = await req.json()
   } catch {
-    console.error('WA POST: failed to parse body')
     return NextResponse.json({ ok: true })
   }
 
-  // Log completo del payload de Meta para diagnóstico
   console.log('WA WEBHOOK RECEIVED:', JSON.stringify(rawBody, null, 2))
 
   try {
-    const entry = rawBody.entry?.[0]
-    const change = entry?.changes?.[0]
-    const value = change?.value
-    const msg = value?.messages?.[0]
+    const msg = rawBody.entry?.[0]?.changes?.[0]?.value?.messages?.[0]
 
-    console.log('WA MSG extracted:', JSON.stringify({ msg, statuses: value?.statuses }, null, 2))
-
-    // Meta envía también confirmaciones de entrega (statuses) — ignorarlas
-    if (!msg) {
-      console.log('WA: no message in payload (probably a status update), skipping')
-      return NextResponse.json({ ok: true })
-    }
-
-    if (msg.type !== 'text') {
-      console.log('WA: non-text message type:', msg.type)
+    if (!msg || msg.type !== 'text') {
+      console.log('WA: skipping — no text message')
       return NextResponse.json({ ok: true })
     }
 
     const from = msg.from
     const text = (msg.text?.body || '').trim()
-
     console.log('WA MESSAGE from', from, ':', text)
 
-    // Guardar mensaje entrante
-    await supabaseAdmin.from('wa_conversations').insert({
+    // Guardar mensaje entrante — patrón correcto Supabase v2
+    const { error: insertErr } = await supabaseAdmin.from('wa_conversations').insert({
       phone: from, message: text, direction: 'inbound', wa_message_id: msg.id,
-    }).catch((e: any) => console.error('WA: failed to save inbound msg:', e.message))
+    })
+    if (insertErr) console.error('WA: save inbound failed:', insertErr.message)
 
-    // Historial de conversación
-    const { data: history } = await supabaseAdmin
+    // Historial
+    const { data: history, error: histErr } = await supabaseAdmin
       .from('wa_conversations')
       .select('message, direction')
       .eq('phone', from)
       .order('created_at', { ascending: false })
       .limit(8)
+    if (histErr) console.error('WA: history fetch failed:', histErr.message)
 
-    // Propiedades disponibles
-    const { data: properties } = await supabaseAdmin
+    // Propiedades activas
+    const { data: properties, error: propsErr } = await supabaseAdmin
       .from('properties')
-      .select('id, title, price, location, bedrooms, bathrooms, area_sqm, estimated_roi, channel, property_type')
+      .select('id, title, price, location, bedrooms, bathrooms, area_sqm, estimated_roi, channel')
       .eq('is_active', true)
       .limit(20)
+    if (propsErr) console.error('WA: properties fetch failed:', propsErr.message)
 
-    // Disponibilidad del agente
+    // Disponibilidad agente
     const { data: availability } = await supabaseAdmin
       .from('agent_availability')
       .select('date_from, date_to, notes, status')
@@ -174,7 +143,7 @@ export async function POST(req: NextRequest) {
       ? availability.map((a: any) =>
           `• ${new Date(a.date_from).toLocaleString('es-ES')} — ${a.notes || a.status}`
         ).join('\n')
-      : 'Consulta disponibilidad con el agente.'
+      : 'Sin visitas agendadas próximamente.'
 
     const fullSystemPrompt = `${SYSTEM_PROMPT}\n\nPROPIEDADES DISPONIBLES:\n${propsContext}\n\nDISPONIBILIDAD DEL AGENTE:\n${availContext}`
 
@@ -190,38 +159,38 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Generar respuesta IA
+    // Respuesta IA
     let reply: string
-    const openaiKey = process.env.OPENAI_API_KEY
-    if (!openaiKey) {
-      console.warn('WA: OPENAI_API_KEY not set — using fallback reply')
-      reply = `Gracias por contactar con GROUP 360 INICIATIVAS. 🏠\n\nUn especialista te atenderá pronto.\n\nMás información: https://group365.vercel.app`
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn('WA: OPENAI_API_KEY not set — using fallback')
+      reply = `Hola! Soy el asistente de GROUP 360 INICIATIVAS. 🏠\n\nUn especialista te contactará pronto.\n\nMás info: https://group365.vercel.app`
     } else {
       try {
         reply = await callOpenAI(conversationMessages, 'gpt-4o-mini', 500)
-        console.log('WA AI reply generated:', reply.slice(0, 100))
+        console.log('WA AI reply:', reply.slice(0, 100))
       } catch (e: any) {
-        console.error('WA: OpenAI failed:', e.message)
-        reply = `Gracias por escribirnos. 🏠\n\nUn especialista de *GROUP 360* te contactará pronto.\n\nVisítanos: https://group365.vercel.app`
+        console.error('WA: OpenAI error:', e.message)
+        reply = `Gracias por escribirnos. 🏠\n\nUn especialista de GROUP 360 te contactará pronto.\n\nVisítanos: https://group365.vercel.app`
       }
     }
 
-    // Enviar respuesta
+    // Enviar respuesta por WhatsApp
     const sendResult = await sendWA(from, reply)
     console.log('WA SEND result:', sendResult)
 
     // Guardar respuesta saliente
-    await supabaseAdmin.from('wa_conversations').insert({
+    const { error: outErr } = await supabaseAdmin.from('wa_conversations').insert({
       phone: from, message: reply, direction: 'outbound',
-    }).catch((e: any) => console.error('WA: failed to save outbound msg:', e.message))
+    })
+    if (outErr) console.error('WA: save outbound failed:', outErr.message)
 
-    // Detectar lead caliente y notificar
-    const hotKeywords = ['compro', 'comprar', 'presupuesto', 'inversión', 'invertir', 'cuándo podemos', 'visita', 'me interesa']
+    // Notificar si lead caliente
+    const hotKeywords = ['compro', 'comprar', 'presupuesto', 'inversión', 'invertir', 'visita', 'me interesa', 'cuánto cuesta', 'precio']
     const isHot = hotKeywords.some(k => text.toLowerCase().includes(k))
     if (isHot) {
       await sendTelegramNotification(
-        `💬 <b>WhatsApp — posible lead caliente</b>\n\n📱 ${from}\n💬 "${text.slice(0, 100)}"`
-      ).catch(() => {})
+        `💬 <b>WhatsApp — lead caliente</b>\n\n📱 ${from}\n💬 "${text.slice(0, 150)}"`
+      )
     }
 
     return NextResponse.json({ ok: true })
