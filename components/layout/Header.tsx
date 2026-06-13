@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
+import { config } from '@/lib/config'
 
 const NAV = [
   { href: '/', label: 'Inicio' },
@@ -38,10 +39,10 @@ export default function Header() {
           />
           <div className="hidden sm:block">
             <span className="font-playfair font-bold text-lg tracking-wide">
-              <span className="text-[#1B7F6F]">GROUP</span>
-              <span className="bg-gradient-to-r from-[#C9A84C] to-[#E8D5A3] bg-clip-text text-transparent"> 360</span>
+              <span className="text-[#1B7F6F]">{config.empresa.nombre.split(' ')[0]}</span>
+              <span className="bg-gradient-to-r from-[#C9A84C] to-[#E8D5A3] bg-clip-text text-transparent"> {config.empresa.nombre.split(' ')[1]}</span>
             </span>
-            <div className="text-[8px] tracking-[0.25em] text-[#8B96A5] uppercase">Iniciativas</div>
+            <div className="text-[8px] tracking-[0.25em] text-[#8B96A5] uppercase">{config.empresa.slogan}</div>
           </div>
         </Link>
 
