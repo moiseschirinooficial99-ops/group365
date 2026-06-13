@@ -32,43 +32,116 @@ Cuando agendes una visita, confirma fecha, hora y dirección.
 Nunca inventes propiedades que no existan en la base de datos.
 Si no tienes información, ofrece conectar con el agente humano.`
 
-async function sendWA(to: string, body: string) {
+async function sendWA(to: string, body: string): Promise<{ ok: boolean; error?: string }> {
   const token = process.env.WHATSAPP_TOKEN
   const phoneId = process.env.WHATSAPP_PHONE_ID
-  if (!token || !phoneId) return
-  await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body } }),
-  }).catch(() => {})
+  if (!token || !phoneId) {
+    console.error('WA SEND: missing token or phoneId', { hasToken: !!token, hasPhoneId: !!phoneId })
+    return { ok: false, error: 'missing_credentials' }
+  }
+
+  const url = `https://graph.facebook.com/v18.0/${phoneId}/messages`
+  const payload = { messaging_product: 'whatsapp', to, type: 'text', text: { body } }
+
+  console.log('WA SEND →', { url, to, bodyPreview: body.slice(0, 80) })
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const json = await res.json()
+    console.log('WA SEND response:', res.status, JSON.stringify(json))
+
+    if (!res.ok) {
+      const errCode = json?.error?.code
+      const errMsg = json?.error?.message || 'unknown'
+
+      // Token expirado o inválido
+      if (res.status === 401 || errCode === 190) {
+        console.error('WA TOKEN EXPIRED or INVALID')
+        await sendTelegramNotification(
+          `🚨 <b>WhatsApp token expirado</b>\n\nEl bot de WhatsApp no puede responder.\n\nAcción: genera un nuevo token en Meta Business y actualiza WHATSAPP_TOKEN en Vercel.\n\nError: ${errMsg}`
+        )
+        return { ok: false, error: 'token_expired' }
+      }
+
+      // Phone ID incorrecto
+      if (errCode === 100) {
+        console.error('WA PHONE_ID wrong or permission error:', errMsg)
+        await sendTelegramNotification(
+          `⚠️ <b>WhatsApp error de configuración</b>\n\nError ${errCode}: ${errMsg}\n\nVerifica WHATSAPP_PHONE_ID en Vercel.`
+        )
+        return { ok: false, error: errMsg }
+      }
+
+      return { ok: false, error: errMsg }
+    }
+
+    return { ok: true }
+  } catch (e: any) {
+    console.error('WA SEND exception:', e.message)
+    return { ok: false, error: e.message }
+  }
 }
 
 export async function GET(req: NextRequest) {
   const sp = new URL(req.url).searchParams
-  if (
-    sp.get('hub.mode') === 'subscribe' &&
-    sp.get('hub.verify_token') === process.env.WHATSAPP_VERIFY_TOKEN
-  ) {
-    return new NextResponse(sp.get('hub.challenge'), { status: 200 })
+  const mode = sp.get('hub.mode')
+  const token = sp.get('hub.verify_token')
+  const challenge = sp.get('hub.challenge')
+
+  console.log('WA VERIFY:', { mode, token, challenge })
+
+  if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+    return new NextResponse(challenge, { status: 200 })
   }
   return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 }
 
 export async function POST(req: NextRequest) {
+  let rawBody: any
   try {
-    const body = await req.json()
-    const msg = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]
-    if (!msg || msg.type !== 'text') return NextResponse.json({ ok: true })
+    rawBody = await req.json()
+  } catch {
+    console.error('WA POST: failed to parse body')
+    return NextResponse.json({ ok: true })
+  }
+
+  // Log completo del payload de Meta para diagnóstico
+  console.log('WA WEBHOOK RECEIVED:', JSON.stringify(rawBody, null, 2))
+
+  try {
+    const entry = rawBody.entry?.[0]
+    const change = entry?.changes?.[0]
+    const value = change?.value
+    const msg = value?.messages?.[0]
+
+    console.log('WA MSG extracted:', JSON.stringify({ msg, statuses: value?.statuses }, null, 2))
+
+    // Meta envía también confirmaciones de entrega (statuses) — ignorarlas
+    if (!msg) {
+      console.log('WA: no message in payload (probably a status update), skipping')
+      return NextResponse.json({ ok: true })
+    }
+
+    if (msg.type !== 'text') {
+      console.log('WA: non-text message type:', msg.type)
+      return NextResponse.json({ ok: true })
+    }
 
     const from = msg.from
     const text = (msg.text?.body || '').trim()
 
-    // Save inbound message
+    console.log('WA MESSAGE from', from, ':', text)
+
+    // Guardar mensaje entrante
     await supabaseAdmin.from('wa_conversations').insert({
       phone: from, message: text, direction: 'inbound', wa_message_id: msg.id,
-    }).catch(() => {})
+    }).catch((e: any) => console.error('WA: failed to save inbound msg:', e.message))
 
-    // Get last 8 messages for context
+    // Historial de conversación
     const { data: history } = await supabaseAdmin
       .from('wa_conversations')
       .select('message, direction')
@@ -76,14 +149,14 @@ export async function POST(req: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(8)
 
-    // Get available properties
+    // Propiedades disponibles
     const { data: properties } = await supabaseAdmin
       .from('properties')
       .select('id, title, price, location, bedrooms, bathrooms, area_sqm, estimated_roi, channel, property_type')
       .eq('is_active', true)
       .limit(20)
 
-    // Get agent availability
+    // Disponibilidad del agente
     const { data: availability } = await supabaseAdmin
       .from('agent_availability')
       .select('date_from, date_to, notes, status')
@@ -91,10 +164,9 @@ export async function POST(req: NextRequest) {
       .order('date_from')
       .limit(5)
 
-    // Build context
     const propsContext = properties?.length
       ? properties.map((p: any) =>
-          `• ${p.title} | €${Number(p.price).toLocaleString('es-ES')} | ${p.location} | ${p.bedrooms}hab ${p.area_sqm}m² | ROI: ${p.estimated_roi || '-'}%`
+          `• ${p.title} | €${Number(p.price).toLocaleString('es-ES')} | ${p.location} | ${p.bedrooms || '-'}hab ${p.area_sqm || '-'}m² | ROI: ${p.estimated_roi || '-'}%`
         ).join('\n')
       : 'No hay propiedades disponibles actualmente.'
 
@@ -104,22 +176,13 @@ export async function POST(req: NextRequest) {
         ).join('\n')
       : 'Consulta disponibilidad con el agente.'
 
-    const fullSystemPrompt = `${SYSTEM_PROMPT}
+    const fullSystemPrompt = `${SYSTEM_PROMPT}\n\nPROPIEDADES DISPONIBLES:\n${propsContext}\n\nDISPONIBILIDAD DEL AGENTE:\n${availContext}`
 
-PROPIEDADES DISPONIBLES:
-${propsContext}
-
-DISPONIBILIDAD DEL AGENTE:
-${availContext}`
-
-    // Build conversation history for OpenAI
     const conversationMessages: Array<{ role: string; content: string }> = [
       { role: 'system', content: fullSystemPrompt },
     ]
-
     if (history) {
-      const sorted = history.slice().reverse()
-      sorted.forEach((m: any) => {
+      history.slice().reverse().forEach((m: any) => {
         conversationMessages.push({
           role: m.direction === 'inbound' ? 'user' : 'assistant',
           content: m.message,
@@ -127,34 +190,43 @@ ${availContext}`
       })
     }
 
-    // Generate AI reply
+    // Generar respuesta IA
     let reply: string
-    try {
-      reply = await callOpenAI(conversationMessages, 'gpt-4o-mini', 500)
-    } catch {
-      reply = `Gracias por escribirnos. 🏠\n\nUn especialista de *GROUP 360* te contactará pronto.\n\nPuedes también llamarnos o visitar group365.vercel.app`
+    const openaiKey = process.env.OPENAI_API_KEY
+    if (!openaiKey) {
+      console.warn('WA: OPENAI_API_KEY not set — using fallback reply')
+      reply = `Gracias por contactar con GROUP 360 INICIATIVAS. 🏠\n\nUn especialista te atenderá pronto.\n\nMás información: https://group365.vercel.app`
+    } else {
+      try {
+        reply = await callOpenAI(conversationMessages, 'gpt-4o-mini', 500)
+        console.log('WA AI reply generated:', reply.slice(0, 100))
+      } catch (e: any) {
+        console.error('WA: OpenAI failed:', e.message)
+        reply = `Gracias por escribirnos. 🏠\n\nUn especialista de *GROUP 360* te contactará pronto.\n\nVisítanos: https://group365.vercel.app`
+      }
     }
 
-    // Send response
-    await sendWA(from, reply)
+    // Enviar respuesta
+    const sendResult = await sendWA(from, reply)
+    console.log('WA SEND result:', sendResult)
 
-    // Save outbound message
+    // Guardar respuesta saliente
     await supabaseAdmin.from('wa_conversations').insert({
       phone: from, message: reply, direction: 'outbound',
-    }).catch(() => {})
+    }).catch((e: any) => console.error('WA: failed to save outbound msg:', e.message))
 
-    // Detect hot lead keywords → notify owner
+    // Detectar lead caliente y notificar
     const hotKeywords = ['compro', 'comprar', 'presupuesto', 'inversión', 'invertir', 'cuándo podemos', 'visita', 'me interesa']
     const isHot = hotKeywords.some(k => text.toLowerCase().includes(k))
     if (isHot) {
       await sendTelegramNotification(
-        `💬 <b>WhatsApp activo — posible lead caliente</b>\n\n📱 ${from}\n💬 "${text.slice(0, 100)}"`
-      )
+        `💬 <b>WhatsApp — posible lead caliente</b>\n\n📱 ${from}\n💬 "${text.slice(0, 100)}"`
+      ).catch(() => {})
     }
 
     return NextResponse.json({ ok: true })
-  } catch (e) {
-    console.error(e)
+  } catch (e: any) {
+    console.error('WA POST unhandled error:', e.message, e.stack)
     return NextResponse.json({ ok: true })
   }
 }
