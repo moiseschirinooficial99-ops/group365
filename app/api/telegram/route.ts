@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     // /start
     if (text === '/start') {
-      await sendTelegram(chatId, `🏠 <b>Panel GROUP 360 INICIATIVAS</b>\n\nComandos disponibles:\n\n📊 /leads — Últimos 10 leads\n📈 /stats — Estadísticas\n📅 /disponible [nota] — Marcar disponible\n🔴 /ocupado [nota] — Marcar ocupado\n📌 /visita [fecha] [hora] [nombre] — Agendar visita\n✅ /sold [id] — Marcar propiedad vendida\n📸 /addprop — Instrucciones para añadir propiedad\n\n<i>Para añadir propiedad: envía una foto con caption:\nTítulo | Precio | Zona | Hab | Baños | M2 | Tipo</i>`)
+      await sendTelegram(chatId, `🏠 <b>Panel GROUP 360 INICIATIVAS</b>\n\n━━━━━━━━━━━━━━━━━\n📊 /leads — Últimos 10 leads\n🔥 /vendedores — Leads de captación\n📈 /stats — Estadísticas del negocio\n━━━━━━━━━━━━━━━━━\n📅 /disponible [nota] — Marcar disponible\n🔴 /ocupado [nota] — Marcar ocupado\n📌 /visita [dd/mm] [hh:mm] [nombre] — Agendar visita\n✅ /sold [id] — Marcar propiedad vendida\n━━━━━━━━━━━━━━━━━\n📸 Añadir propiedad:\nEnvía una FOTO con caption:\n<code>Título | Precio | Zona | Hab | Baños | M2 | Tipo</code>\n\nEjemplo:\n<code>Villa Marbella | 650000 | Costa del Sol | 5 | 4 | 380 | venta</code>\n\nTipos: venta · alquiler · bancaria\n━━━━━━━━━━━━━━━━━\n🌐 Panel web: group365.vercel.app/admin`)
       return NextResponse.json({ ok: true })
     }
 
@@ -68,6 +68,28 @@ export async function POST(req: NextRequest) {
       ).join('\n\n')
 
       await sendTelegram(chatId, `📋 <b>Últimos 10 leads</b>\n\n${list}`)
+      return NextResponse.json({ ok: true })
+    }
+
+    // /vendedores
+    if (text === '/vendedores') {
+      const { data } = await supabaseAdmin
+        .from('leads')
+        .select('name, email, phone, scoring_result, source, created_at, notes')
+        .ilike('source', '%vendedor%')
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      if (!data?.length) {
+        await sendTelegram(chatId, '🏠 No hay leads de captación (vendedores) todavía.\n\nEl bot de WhatsApp notificará automáticamente cuando detecte uno.')
+        return NextResponse.json({ ok: true })
+      }
+
+      const list = data.map((l: any) =>
+        `🏠 <b>${l.name || 'Sin nombre'}</b>\n📱 ${l.phone || '-'}\n💬 ${(l.notes || '-').slice(0, 80)}\n🕐 ${new Date(l.created_at).toLocaleDateString('es-ES')}`
+      ).join('\n\n')
+
+      await sendTelegram(chatId, `🏠 <b>Leads de Captación (Vendedores)</b>\n\n${list}`)
       return NextResponse.json({ ok: true })
     }
 
