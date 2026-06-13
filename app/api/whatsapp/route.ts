@@ -60,8 +60,25 @@ Web: group365.vercel.app · WhatsApp: +34 611 25 18 18
 - SIEMPRE termina con una pregunta o llamada a la acción
 - Si detectas un VENDEDOR → máxima prioridad, escalar a humano inmediatamente`
 
+async function getWAToken(): Promise<string | null> {
+  // Try Supabase first (auto-renewed token)
+  try {
+    const { data } = await supabaseAdmin
+      .from('app_settings')
+      .select('value, expires_at')
+      .eq('key', 'whatsapp_token')
+      .single()
+    if (data?.value) {
+      console.log('WA: using token from Supabase, expires:', data.expires_at)
+      return data.value
+    }
+  } catch {}
+  // Fallback to env var
+  return process.env.WHATSAPP_TOKEN || null
+}
+
 async function sendWA(to: string, body: string): Promise<{ ok: boolean; error?: string }> {
-  const token = process.env.WHATSAPP_TOKEN
+  const token = await getWAToken()
   const phoneId = process.env.WHATSAPP_PHONE_ID
   if (!token || !phoneId) {
     console.error('WA SEND: missing token or phoneId', { hasToken: !!token, hasPhoneId: !!phoneId })
