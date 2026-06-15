@@ -11,6 +11,10 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const token = req.cookies.get('admin_token')?.value
+  if (!token || token !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
   try {
     const body = await req.json()
     const { data, error } = await supabaseAdmin

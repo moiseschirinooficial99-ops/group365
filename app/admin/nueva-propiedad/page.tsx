@@ -78,6 +78,29 @@ export default function NuevaPropiedadPage() {
     setError('')
 
     try {
+      // Auto-generate AI description if empty
+      let finalDescription = form.description.trim()
+      if (!finalDescription) {
+        setAiLoading(true)
+        try {
+          const aiRes = await fetch('/api/ai/generate-description', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              titulo: form.title, tipo: form.tipo,
+              precio: form.price, ubicacion: form.location,
+              m2: form.area_sqm, habitaciones: form.bedrooms, banos: form.bathrooms,
+            }),
+          })
+          const { description } = await aiRes.json()
+          if (description) {
+            finalDescription = description
+            set('description', description)
+          }
+        } catch { /* best-effort */ }
+        setAiLoading(false)
+      }
+
       // Upload images
       const imageUrls: string[] = []
       for (const file of files) {
@@ -97,7 +120,7 @@ export default function NuevaPropiedadPage() {
         area_sqm: Number(form.area_sqm) || null,
         bedrooms: Number(form.bedrooms) || null,
         bathrooms: Number(form.bathrooms) || null,
-        description: form.description,
+        description: finalDescription,
         channel: CHANNELS[form.tipo as keyof typeof CHANNELS] || 'personal',
         is_active: true,
         is_featured: false,
