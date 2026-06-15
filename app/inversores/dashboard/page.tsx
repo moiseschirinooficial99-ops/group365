@@ -30,6 +30,37 @@ export default function Dashboard() {
   const [filterMaxPrice, setFilterMaxPrice] = useState('')
   const [filterMinRoi, setFilterMinRoi] = useState('')
 
+  // NPL Calculator
+  const [nplDebt, setNplDebt] = useState('')
+  const [nplPurchase, setNplPurchase] = useState('')
+  const [nplLeadSent, setNplLeadSent] = useState(false)
+
+  const nplCalc = useMemo(() => {
+    const debt = Number(nplDebt)
+    const purchase = Number(nplPurchase)
+    if (!debt || !purchase || purchase >= debt) return null
+    const margin = debt - purchase
+    const roi = (margin / purchase) * 100
+    return { margin, roi }
+  }, [nplDebt, nplPurchase])
+
+  const handleNplLead = async () => {
+    if (nplLeadSent) return
+    await fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: profile?.name || user?.email,
+        email: user?.email,
+        phone: profile?.phone || '',
+        source: 'npl_investor',
+        scoring_result: 90,
+        notes: `Interesado en NPL. Deuda: ${nplDebt}€, Precio compra: ${nplPurchase}€${nplCalc ? `, ROI estimado: ${nplCalc.roi.toFixed(1)}%` : ''}`,
+      }),
+    })
+    setNplLeadSent(true)
+  }
+
   // ROI Calculator
   const [calcPrice, setCalcPrice] = useState('')
   const [calcRent, setCalcRent] = useState('')
@@ -222,6 +253,85 @@ export default function Dashboard() {
             <div className="bg-[#161D26] rounded-lg p-4">
               <p className="text-[#8B96A5] text-xs mb-1">Consultas activas</p>
               <p className="gold-text text-sm font-bold">{consultas.length}</p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ── SECCIÓN NPL ── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          className="card p-6 mb-6 border border-[#C9A84C]/15">
+          <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[#C9A84C] text-xs font-bold tracking-[0.25em] uppercase">Nueva oportunidad</span>
+              </div>
+              <h2 className="font-playfair text-xl font-bold text-white">Inversión en Hipotecas Bancarias <span className="gold-text">(NPL)</span></h2>
+              <p className="text-[#8B96A5] text-sm mt-1">Compra derechos de cobro con descuento del 30-70%. Garantía hipotecaria real. ROI de hasta el 100%.</p>
+            </div>
+            <span className="text-xs px-3 py-1.5 rounded-full bg-[#C9A84C]/10 border border-[#C9A84C]/25 text-[#C9A84C] font-semibold shrink-0">
+              +300 operaciones completadas
+            </span>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Calculadora */}
+            <div className="space-y-4">
+              <h3 className="text-white text-sm font-semibold flex items-center gap-2">
+                <Calculator size={15} className="text-[#C9A84C]" />
+                Simulador NPL
+              </h3>
+              <div>
+                <label className="text-xs text-[#8B96A5] block mb-1.5">Valor de la deuda a comprar (€)</label>
+                <input className="input" type="number" placeholder="75.000"
+                  value={nplDebt} onChange={e => setNplDebt(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs text-[#8B96A5] block mb-1.5">Precio de compra ofertado (€)</label>
+                <input className="input" type="number" placeholder="40.000"
+                  value={nplPurchase} onChange={e => setNplPurchase(e.target.value)} />
+              </div>
+              <p className="text-[#8B96A5] text-xs">Ejemplo: deuda de 75.000€ comprada por 40.000€ sobre una casa de 150.000€.</p>
+            </div>
+
+            {/* Resultado */}
+            <div className="flex flex-col justify-between">
+              {nplCalc ? (
+                <div className="space-y-3">
+                  <div className="bg-[#161D26] rounded-xl p-5 text-center">
+                    <p className="text-[#8B96A5] text-xs uppercase tracking-wider mb-1">ROI Estimado</p>
+                    <p className="font-playfair text-4xl font-bold text-[#C9A84C]">{nplCalc.roi.toFixed(1)}%</p>
+                    <p className="text-[#8B96A5] text-xs mt-1">Plazo estimado: 8-16 meses</p>
+                  </div>
+                  <div className="bg-[#161D26] rounded-xl p-4 text-center">
+                    <p className="text-[#8B96A5] text-xs mb-1">Margen bruto</p>
+                    <p className="text-white font-bold text-lg">€{nplCalc.margin.toLocaleString('es-ES')}</p>
+                    <p className="text-[#1B7F6F] text-xs mt-1">✓ Con garantía hipotecaria sobre la vivienda</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-[#161D26] rounded-xl p-6 text-center flex-1 flex flex-col items-center justify-center">
+                  <TrendingUp size={36} className="text-[#8B96A5] mb-3 opacity-30" />
+                  <p className="text-[#8B96A5] text-sm">Introduce los valores para ver el ROI estimado.</p>
+                </div>
+              )}
+
+              <div className="mt-4">
+                <p className="text-[#8B96A5] text-xs mb-3">
+                  GROUP 360 gestiona todo el proceso legal. Más de 300 operaciones completadas.<br />
+                  Capital mínimo recomendado: <strong className="text-white">30.000€</strong> · Riesgo de pérdida de capital: <strong className="text-[#1B7F6F]">CERO</strong>
+                </p>
+                {nplLeadSent ? (
+                  <div className="w-full py-3 rounded-xl bg-[#1B7F6F]/10 border border-[#1B7F6F]/25 text-[#1B7F6F] text-sm font-medium text-center">
+                    ✓ José Luis te contactará pronto
+                  </div>
+                ) : (
+                  <button onClick={handleNplLead}
+                    className="btn-primary w-full py-3 text-sm flex items-center justify-center gap-2">
+                    <TrendingUp size={15} />
+                    Quiero invertir en NPL → Hablar con José Luis
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </motion.div>
