@@ -1,6 +1,7 @@
 'use client'
 import { motion } from 'framer-motion'
 import { Bed, Bath, Maximize2, MapPin, MessageCircle } from 'lucide-react'
+import Link from 'next/link'
 
 const CHANNEL_LABEL: Record<string, string> = {
   exp:      'Disponible',
@@ -21,8 +22,9 @@ export default function PropertyCard({ property }: { property: any }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
-      className="card overflow-hidden group"
+      className="card overflow-hidden group relative"
     >
+      <Link href={`/propiedades/${property.id}`} className="absolute inset-0 z-10" aria-label={`Ver ${property.title}`} />
       {/* Image */}
       <div className="relative h-60 overflow-hidden">
         <img
@@ -66,7 +68,7 @@ export default function PropertyCard({ property }: { property: any }) {
         </div>
 
         <a href={waUrl} target="_blank" rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-[#1B7F6F]/10 border border-[#1B7F6F]/25 text-[#1B7F6F] text-sm font-medium hover:bg-[#1B7F6F]/20 transition-all">
+          className="relative z-20 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-[#1B7F6F]/10 border border-[#1B7F6F]/25 text-[#1B7F6F] text-sm font-medium hover:bg-[#1B7F6F]/20 transition-all">
           <MessageCircle size={14} />
           Contactar por WhatsApp
         </a>

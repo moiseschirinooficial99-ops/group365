@@ -10,6 +10,7 @@ import {
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PropertyCard from '@/components/cards/PropertyCard'
+import { config, waLink } from '@/lib/config'
 
 /* ─── Casos de Éxito ─── */
 function CasosDeExito() {
@@ -192,6 +193,18 @@ export default function HomePage() {
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [testIdx, setTestIdx] = useState(0)
+  const [featuredProps, setFeaturedProps] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch('/api/properties')
+      .then(r => r.json())
+      .then((data: any[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setFeaturedProps(data.filter(p => p.channel !== 'alquiler').slice(0, 3))
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -273,14 +286,22 @@ export default function HomePage() {
 
           {/* Logo 3D flotante */}
           <div className="absolute right-16 top-1/2 -translate-y-1/2 hidden xl:flex items-center justify-center">
-            <motion.img
-              src="/logo.png"
-              alt="GROUP 360"
-              animate={{ y: [0, -12, 0] }}
-              transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-              style={{ width: 260, height: 260, filter: 'drop-shadow(0 0 40px rgba(201,168,76,0.45)) drop-shadow(0 0 80px rgba(27,127,111,0.2))' }}
-              className="object-contain"
-            />
+            <div className="relative flex items-center justify-center">
+              <div className="absolute w-80 h-80 rounded-full bg-[#C9A84C]/10 blur-3xl" />
+              <div className="absolute w-52 h-52 rounded-full bg-[#1B7F6F]/12 blur-2xl" />
+              <motion.img
+                src="/logo.png"
+                alt="GROUP 360"
+                animate={{ y: [0, -14, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                style={{
+                  width: 300, height: 300,
+                  filter: 'drop-shadow(0 0 60px rgba(201,168,76,0.75)) drop-shadow(0 0 120px rgba(27,127,111,0.4)) drop-shadow(0 24px 50px rgba(0,0,0,0.7))',
+                  mixBlendMode: 'lighten',
+                }}
+                className="object-contain relative z-10"
+              />
+            </div>
           </div>
         </div>
 
@@ -392,14 +413,22 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           {/* Logo flotante 3D */}
           <div className="flex justify-center mb-14">
-            <motion.img
-              src="/logo.png"
-              alt="GROUP 360"
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-              style={{ width: 220, height: 220, filter: 'drop-shadow(0 0 35px rgba(201,168,76,0.5)) drop-shadow(0 0 70px rgba(27,127,111,0.25))' }}
-              className="object-contain"
-            />
+            <div className="relative flex items-center justify-center">
+              <div className="absolute w-72 h-72 rounded-full bg-[#C9A84C]/10 blur-3xl" />
+              <div className="absolute w-48 h-48 rounded-full bg-[#1B7F6F]/12 blur-2xl" />
+              <motion.img
+                src="/logo.png"
+                alt="GROUP 360"
+                animate={{ y: [0, -12, 0] }}
+                transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+                style={{
+                  width: 220, height: 220,
+                  filter: 'drop-shadow(0 0 55px rgba(201,168,76,0.7)) drop-shadow(0 0 110px rgba(27,127,111,0.35))',
+                  mixBlendMode: 'lighten',
+                }}
+                className="object-contain relative z-10"
+              />
+            </div>
           </div>
 
           <motion.div variants={ST} initial="hidden" whileInView="show" viewport={{ once: true }} className="mb-14">
@@ -454,7 +483,7 @@ export default function HomePage() {
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {PROPERTIES.map(p => <PropertyCard key={p.id} property={p} />)}
+            {(featuredProps.length > 0 ? featuredProps : PROPERTIES).map(p => <PropertyCard key={p.id} property={p} />)}
           </div>
 
           <div className="text-center mt-12">
@@ -683,9 +712,9 @@ export default function HomePage() {
             </motion.p>
             <motion.div variants={ST} className="space-y-5">
               {[
-                { code: 'WA', label: 'WhatsApp', value: '+34 600 000 000', href: 'https://wa.me/34600000000' },
-                { code: '@',  label: 'Email',    value: 'info@group360.es', href: null },
-                { code: 'ES', label: 'Dirección', value: 'Passeig de Les Palmeres 16, Reus, Tarragona', href: null },
+                { code: 'WA', label: 'WhatsApp', value: config.contacto.whatsappDisplay, href: waLink() },
+                { code: '@',  label: 'Email',    value: config.contacto.email, href: null },
+                { code: 'ES', label: 'Dirección', value: `${config.contacto.direccion}, ${config.contacto.ciudad}, ${config.contacto.provincia}`, href: null },
               ].map((c, i) => (
                 <motion.div key={i} variants={FU} className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-lg bg-[#1B7F6F]/8 border border-[#1B7F6F]/18 flex items-center justify-center shrink-0">
