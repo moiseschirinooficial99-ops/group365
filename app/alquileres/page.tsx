@@ -1,15 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PropertyCard from '@/components/cards/PropertyCard'
-
-const RENTALS = [
-  { id: 'r1', title: 'Villa Turística Costa del Sol', price: 380000, location: 'Estepona, Málaga', bedrooms: 4, bathrooms: 3, area_sqm: 250, estimated_roi: 6.0, yearly_rent: 22800, channel: 'alquiler', main_image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800' },
-  { id: 'r2', title: 'Apartamento Valencia Playa', price: 165000, location: 'Valencia', bedrooms: 2, bathrooms: 1, area_sqm: 68, estimated_roi: 6.0, yearly_rent: 9900, channel: 'alquiler', main_image: 'https://images.unsplash.com/photo-1555636222-cae831e670b3?w=800' },
-  { id: 'r3', title: 'Villa Exclusiva Marbella', price: 650000, location: 'Marbella, Costa del Sol', bedrooms: 5, bathrooms: 4, area_sqm: 380, estimated_roi: 6.0, yearly_rent: 39000, channel: 'alquiler', main_image: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800' },
-]
 
 const FADE_UP = {
   hidden: { opacity: 0, y: 30 },
@@ -17,9 +11,18 @@ const FADE_UP = {
 }
 
 export default function AlquileresPage() {
+  const [rentals, setRentals] = useState<any[]>([])
+  const [loadingProps, setLoadingProps] = useState(true)
   const [form, setForm] = useState({ name: '', email: '', phone: '', guests: '', dates: '' })
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/properties')
+      .then(r => r.json())
+      .then((data: any[]) => setRentals(Array.isArray(data) ? data.filter(p => p.channel === 'alquiler') : []))
+      .finally(() => setLoadingProps(false))
+  }, [])
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,9 +69,20 @@ export default function AlquileresPage() {
             <h2 className="font-playfair text-4xl font-bold mb-3">Propiedades Disponibles</h2>
             <p className="text-gray-500">Gestión completa, máxima rentabilidad</p>
           </motion.div>
-          <div className="grid md:grid-cols-3 gap-6 mb-16">
-            {RENTALS.map(p => <PropertyCard key={p.id} property={p} />)}
-          </div>
+          {loadingProps ? (
+            <div className="grid md:grid-cols-3 gap-6 mb-16">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="card h-80 animate-pulse bg-white/5 rounded-xl" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-6 mb-16">
+              {rentals.length > 0
+                ? rentals.map(p => <PropertyCard key={p.id} property={p} />)
+                : <p className="col-span-3 text-center py-12 text-[#8B96A5]">No hay propiedades de alquiler disponibles por el momento.</p>
+              }
+            </div>
+          )}
 
           <div className="max-w-lg mx-auto">
             <motion.div initial="hidden" whileInView="show" variants={FADE_UP} viewport={{ once: true }} className="text-center mb-8">
