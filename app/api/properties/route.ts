@@ -10,13 +10,24 @@ export async function GET() {
   return NextResponse.json(data || [])
 }
 
+const ALLOWED_COLUMNS = new Set([
+  'title','description','price','price_per_night','location','zone',
+  'latitude','longitude','property_type','channel','bedrooms','bathrooms',
+  'area_sqm','yearly_rent','estimated_roi','exp_property_id',
+  'main_image','images','features','is_featured','is_active','created_by',
+])
+
+function pickAllowed(body: Record<string, any>) {
+  return Object.fromEntries(Object.entries(body).filter(([k]) => ALLOWED_COLUMNS.has(k)))
+}
+
 export async function POST(req: NextRequest) {
   const token = req.cookies.get('admin_token')?.value
   if (!token || token !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
   try {
-    const body = await req.json()
+    const body = pickAllowed(await req.json())
     const { data, error } = await supabaseAdmin
       .from('properties')
       .insert(body)
