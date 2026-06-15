@@ -759,7 +759,7 @@ export default function HomePage() {
                 </div>
                 <div>
                   <label className="text-xs text-[#8B96A5] block mb-1.5">Teléfono</label>
-                  <input className="input" type="tel" placeholder="+34 600 000 000"
+                  <input className="input" type="tel" placeholder="+34 611 25 18 18"
                     value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
                 </div>
                 <div>

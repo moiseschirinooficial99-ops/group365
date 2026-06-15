@@ -176,7 +176,7 @@ export default function RegisterPage() {
                 </div>
                 <div>
                   <label className="text-xs text-[#8B96A5] block mb-1.5">WhatsApp</label>
-                  <input className="input" type="tel" placeholder="+34 600 000 000"
+                  <input className="input" type="tel" placeholder="+34 611 25 18 18"
                     value={form.phone} onChange={e => set('phone', e.target.value)} />
                 </div>
                 <button type="button" onClick={goStep2} className="btn-primary w-full py-3.5 mt-2">
