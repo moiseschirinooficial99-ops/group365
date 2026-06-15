@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
-export async function GET() {
-  const { data } = await supabaseAdmin
-    .from('properties')
-    .select('*')
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
+export async function GET(req: NextRequest) {
+  const sp = new URL(req.url).searchParams
+  const successOnly = sp.get('success') === 'true'
+  const statusFilter = sp.get('status')
+
+  let query = supabaseAdmin.from('properties').select('*')
+
+  if (successOnly) {
+    query = query.eq('status', 'vendida').eq('is_success_case', true)
+  } else if (statusFilter) {
+    query = query.eq('status', statusFilter).eq('is_active', true)
+  } else {
+    query = query.eq('is_active', true)
+  }
+
+  const { data } = await query.order('created_at', { ascending: false })
   return NextResponse.json(data || [])
 }
 
@@ -41,6 +51,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const token = req.cookies.get('admin_token')?.value
+  if (!token || token !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
   try {
     const { searchParams } = new URL(req.url)
     const id = searchParams.get('id')

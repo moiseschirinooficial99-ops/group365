@@ -11,6 +11,81 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PropertyCard from '@/components/cards/PropertyCard'
 
+/* ─── Casos de Éxito ─── */
+function CasosDeExito() {
+  const [cases, setCases] = useState<any[]>([])
+  useEffect(() => {
+    fetch('/api/properties?success=true')
+      .then(r => r.json())
+      .then(d => setCases(Array.isArray(d) ? d : []))
+      .catch(() => {})
+  }, [])
+
+  if (cases.length === 0) return null
+
+  return (
+    <section className="section bg-[#0D1117]">
+      <div className="container">
+        <motion.div initial="hidden" whileInView="show" variants={FU} viewport={{ once: true }} className="text-center mb-14">
+          <span className="inline-block text-[#1B7F6F] text-xs font-semibold tracking-[0.4em] uppercase mb-4 border border-[#1B7F6F]/30 px-4 py-1.5 rounded-full">
+            Resultados Reales
+          </span>
+          <h2 className="font-playfair text-4xl font-bold mb-3">
+            Propiedades que ya<br /><span className="gold-text">encontraron dueño</span>
+          </h2>
+          <p className="text-gray-500 max-w-xl mx-auto">Resultados reales de nuestros clientes. Cada propiedad vendida es una historia de éxito.</p>
+        </motion.div>
+
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
+          {cases.map((p, i) => {
+            const publishedAt = p.created_at ? new Date(p.created_at) : null
+            const soldAt = p.sold_date ? new Date(p.sold_date) : null
+            const days = publishedAt && soldAt ? Math.round((soldAt.getTime() - publishedAt.getTime()) / 86400000) : null
+            return (
+              <motion.div key={p.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                className="card overflow-hidden border border-[#C9A84C]/20 group">
+                <div className="relative h-48 overflow-hidden">
+                  <img src={p.main_image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800'} alt={p.title} className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="border-2 border-[#C9A84C] text-[#C9A84C] text-sm font-bold px-4 py-1.5 rotate-[-8deg] tracking-widest bg-black/30 backdrop-blur-sm">
+                      VENDIDA
+                    </div>
+                  </div>
+                  {days && days > 0 && (
+                    <div className="absolute top-3 right-3 bg-[#1B7F6F] text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
+                      Vendida en {days} días
+                    </div>
+                  )}
+                </div>
+                <div className="p-4 border-t border-[#C9A84C]/15">
+                  <h3 className="font-semibold text-sm text-white truncate mb-1">{p.title}</h3>
+                  <div className="flex items-center gap-1 text-[#8B96A5] text-xs mb-2">
+                    <MapPin size={10} /><span className="truncate">{p.location}</span>
+                  </div>
+                  {p.sold_price && (
+                    <p className="gold-text text-sm font-bold">€{Number(p.sold_price).toLocaleString('es-ES')} vendida</p>
+                  )}
+                </div>
+              </motion.div>
+            )
+          })}
+        </div>
+
+        <motion.div initial="hidden" whileInView="show" variants={FU} viewport={{ once: true }} className="text-center card p-8 border border-[#C9A84C]/15">
+          <p className="text-white font-semibold text-lg mb-2">¿Tienes una propiedad similar?</p>
+          <p className="text-[#8B96A5] text-sm mb-5">Cuéntanos y te ayudamos a encontrar el comprador perfecto.</p>
+          <a href="https://wa.me/34611251818?text=Hola, tengo una propiedad que quiero vender. ¿Podéis ayudarme?"
+            target="_blank" rel="noopener noreferrer"
+            className="btn-primary inline-flex items-center gap-2">
+            Contactar por WhatsApp →
+          </a>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
 /* ─── Animation variants ─── */
 const FU = {
   hidden: { opacity: 0, y: 22 },
@@ -677,6 +752,8 @@ export default function HomePage() {
           </motion.div>
         </div>
       </section>
+
+      <CasosDeExito />
 
       <Footer />
     </main>

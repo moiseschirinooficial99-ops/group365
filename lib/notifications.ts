@@ -50,3 +50,21 @@ export async function notifyDailySummary(stats: { leads: number; hot: number; pr
     `📊 <b>Resumen diario — GROUP 360</b>\n\n👥 Leads hoy: ${stats.leads}\n🔥 Leads calientes: ${stats.hot}\n🏠 Propiedades activas: ${stats.properties}\n📅 Visitas agendadas: ${stats.visits}`
   )
 }
+
+export async function notifyPropertySold(property: any): Promise<void> {
+  await sendTelegramNotification(
+    `🏆 <b>PROPIEDAD VENDIDA</b>\n\n🏠 ${property.title}\n📍 ${property.location}\n💰 Precio venta: ${Number(property.sold_price || 0).toLocaleString('es-ES')}€\n📅 Fecha: ${property.sold_date}\n\n¡Felicidades! 🎉`
+  )
+}
+
+export async function notifyNewRentalBooking(booking: any): Promise<void> {
+  await sendTelegramNotification(
+    `🏖️ <b>NUEVA RESERVA ALQUILER</b>\n\n🏠 ${booking.property_name}\n👤 ${booking.guest_name || '-'}\n📱 ${booking.guest_phone || '-'}\n📅 ${booking.date_start} → ${booking.date_end}\n💰 Total: ${booking.total_price ? booking.total_price + '€' : '-'}\n📲 Plataforma: ${booking.platform || 'directo'}`
+  )
+}
+
+export async function notifyRentalBlocked(data: any): Promise<void> {
+  await sendTelegramNotification(
+    `🚫 <b>FECHAS BLOQUEADAS</b>\n\n🏠 ${data.property_name}\n📅 ${data.date_start} → ${data.date_end}\n📝 Motivo: ${data.notes || 'Sin especificar'}`
+  )
+}
