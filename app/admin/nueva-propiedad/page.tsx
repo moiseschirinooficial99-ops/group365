@@ -130,11 +130,9 @@ export default function NuevaPropiedadPage() {
 
       if (form.tipo === 'venta' || form.tipo === 'bancaria') {
         propertyData.estimated_roi = Number(form.estimated_roi) || null
-        propertyData.property_status = form.property_status
       }
       if (form.tipo === 'alquiler') {
         propertyData.price_per_night = Number(form.price_per_night) || null
-        propertyData.max_guests = Number(form.max_guests) || null
       }
 
       // INSERT property via properties API
