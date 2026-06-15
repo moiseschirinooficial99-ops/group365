@@ -441,13 +441,13 @@ export default function HomePage() {
               <Link href="/inversores" className="btn-primary inline-flex items-center gap-2 text-sm">
                 Saber más <ArrowRight size={14} />
               </Link>
-              <a href="tel:+34600000000" className="flex items-center gap-3 group">
+              <a href="tel:+34611251818" className="flex items-center gap-3 group">
                 <div className="w-10 h-10 rounded-full bg-[#C9A84C]/8 border border-[#C9A84C]/20 flex items-center justify-center">
                   <Phone size={14} className="text-[#C9A84C]" />
                 </div>
                 <div>
                   <div className="text-[10px] text-[#8B96A5] uppercase tracking-widest">Llámanos</div>
-                  <div className="text-sm text-white font-medium group-hover:text-[#C9A84C] transition-colors">+34 600 000 000</div>
+                  <div className="text-sm text-white font-medium group-hover:text-[#C9A84C] transition-colors">+34 611 25 18 18</div>
                 </div>
               </a>
             </motion.div>
