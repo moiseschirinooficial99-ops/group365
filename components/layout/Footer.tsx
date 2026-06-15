@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { config, waLink } from '@/lib/config'
 
@@ -106,6 +107,24 @@ export default function Footer() {
               </li>
             )}
           </ul>
+        </div>
+      </div>
+
+      {/* eXp Realty badge */}
+      <div className="max-w-7xl mx-auto mb-8 flex items-center gap-4 border border-white/5 rounded-xl px-6 py-4 bg-white/[0.02]">
+        <div className="shrink-0">
+          <Image
+            src="/logo exp.jpeg"
+            alt="eXp Realty"
+            width={100}
+            height={34}
+            className="object-contain opacity-90"
+          />
+        </div>
+        <div>
+          <p className="text-[10px] tracking-[0.25em] text-[#8B96A5] uppercase mb-0.5">Orgullosos miembros de</p>
+          <p className="text-white text-sm font-semibold">eXp Realty</p>
+          <p className="text-[#8B96A5] text-xs">Team Leader · Red inmobiliaria global</p>
         </div>
       </div>
 
