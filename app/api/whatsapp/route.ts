@@ -266,7 +266,7 @@ export async function POST(req: NextRequest) {
     // Propiedades activas
     const { data: properties, error: propsErr } = await supabaseAdmin
       .from('properties')
-      .select('id, title, price, location, bedrooms, bathrooms, area_sqm, estimated_roi, channel')
+      .select('*')
       .eq('is_active', true)
       .limit(20)
     if (propsErr) console.error('WA: properties fetch failed:', propsErr.message)
@@ -280,10 +280,41 @@ export async function POST(req: NextRequest) {
       .limit(5)
 
     const propsContext = properties?.length
-      ? properties.map((p: any) =>
-          `- ${p.title}: ${Number(p.price) > 0 ? Number(p.price).toLocaleString('es-ES') + '€' : 'Precio a consultar'} | ${p.location} | ${p.bedrooms || '-'} hab | ${p.bathrooms || '-'} baños | ${p.area_sqm || '-'}m²`
-        ).join('\n')
-      : 'Consultarnos para propiedades disponibles.'
+      ? properties.map((p: any) => {
+          const precio = Number(p.price) > 0
+            ? `${Number(p.price).toLocaleString('es-ES')}€`
+            : 'Precio a consultar'
+
+          const caracteristicas = [
+            p.bedrooms && `${p.bedrooms} dormitorios`,
+            p.bathrooms && `${p.bathrooms} baños`,
+            (p.area_sqm || p.area_m2) && `${p.area_sqm || p.area_m2}m² construidos`,
+            p.plot_m2 && `parcela ${p.plot_m2}m²`,
+          ].filter(Boolean).join(' | ')
+
+          const desc = p.description || ''
+          const amenidades: string[] = []
+          if (desc.toLowerCase().includes('piscina')) amenidades.push('piscina privada')
+          if (desc.toLowerCase().includes('jacuzzi')) amenidades.push('jacuzzi')
+          if (desc.toLowerCase().includes('terraza')) amenidades.push('terraza')
+          if (desc.toLowerCase().includes('barbacoa')) amenidades.push('barbacoa')
+          if (desc.toLowerCase().includes('garaje')) amenidades.push('garaje')
+          if (desc.toLowerCase().includes('jardín') || desc.toLowerCase().includes('jardin')) amenidades.push('jardín')
+          if (desc.toLowerCase().includes('aire acondicionado')) amenidades.push('aire acondicionado')
+          if (desc.toLowerCase().includes('calefacción') || desc.toLowerCase().includes('calefaccion')) amenidades.push('calefacción')
+          if (desc.toLowerCase().includes('suite')) amenidades.push('suite principal')
+          if (desc.toLowerCase().includes('solarium') || desc.toLowerCase().includes('solárium')) amenidades.push('solárium')
+
+          return `PROPIEDAD: ${p.title}
+Tipo: ${p.type || p.channel || 'venta'} | Estado: ${p.status || p.property_status || 'disponible'}
+Ubicación: ${p.location}
+Precio: ${precio}
+Características: ${caracteristicas || 'ver descripción'}
+Extras: ${amenidades.length > 0 ? amenidades.join(', ') : 'ver descripción'}
+Descripción completa: ${p.description || 'Sin descripción'}
+ROI estimado: ${p.estimated_roi || p.roi_percentage ? (p.estimated_roi || p.roi_percentage) + '%' : 'consultar'}`
+        }).join('\n\n---\n\n')
+      : 'Sin propiedades disponibles actualmente.'
 
     const availContext = availability?.length
       ? availability.map((a: any) =>

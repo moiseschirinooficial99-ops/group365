@@ -25,6 +25,7 @@ export default function NuevaPropiedadPage() {
     location: '',
     price: '',
     area_sqm: '',
+    plot_m2: '',
     bedrooms: '',
     bathrooms: '',
     description: '',
@@ -118,6 +119,7 @@ export default function NuevaPropiedadPage() {
         location: form.location,
         price: Number(form.price),
         area_sqm: Number(form.area_sqm) || null,
+        plot_m2: Number(form.plot_m2) || null,
         bedrooms: Number(form.bedrooms) || null,
         bathrooms: Number(form.bathrooms) || null,
         description: finalDescription,
@@ -283,6 +285,11 @@ export default function NuevaPropiedadPage() {
                 <label className="text-xs text-[#8B96A5] block mb-1.5">Superficie m²</label>
                 <input className="input" type="number" placeholder="120"
                   value={form.area_sqm} onChange={e => set('area_sqm', e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs text-[#8B96A5] block mb-1.5">Parcela m²</label>
+                <input className="input" type="number" placeholder="500"
+                  value={form.plot_m2} onChange={e => set('plot_m2', e.target.value)} />
               </div>
               <div>
                 <label className="text-xs text-[#8B96A5] block mb-1.5">Habitaciones</label>

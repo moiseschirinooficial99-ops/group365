@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
 import { config } from '@/lib/config'
@@ -29,13 +30,14 @@ export default function Header() {
     }`}>
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 shrink-0">
-          <img
+          <Image
             src="/logo.png"
-            alt="GROUP 360"
-            width={56}
-            height={56}
-            className="w-14 h-14 object-contain"
-            style={{ mixBlendMode: 'lighten' }}
+            alt="GROUP 360 INICIATIVAS"
+            width={240}
+            height={240}
+            quality={100}
+            priority={true}
+            style={{ objectFit: 'contain', width: 'auto', height: '56px', mixBlendMode: 'lighten' }}
           />
           <div className="hidden sm:block">
             <span className="font-playfair font-bold text-lg tracking-wide">
