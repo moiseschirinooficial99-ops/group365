@@ -14,7 +14,7 @@ Empresa: GROUP 360 INICIATIVAS S.L.
 NIF: B13911979
 Representante: José Luis Jiménez — experto inversor inmobiliario, Team Leader en eXp Realty, con más de 300 operaciones NPL completadas y más de 28 millones de euros invertidos en 2 años.
 WhatsApp/Contacto: +34 611 25 18 18
-Web: group365.vercel.app
+Web: group360iniciativas.com
 Operativa: 100% digital. Gestionamos operaciones en toda España.
 
 ══ TRES LÍNEAS DE NEGOCIO ══
@@ -489,14 +489,14 @@ ROI estimado: ${p.estimated_roi || p.roi_percentage ? (p.estimated_roi || p.roi_
     let reply: string
     if (!process.env.OPENAI_API_KEY) {
       console.warn('WA: OPENAI_API_KEY not set — using fallback')
-      reply = `Hola! Soy el asistente de GROUP 360 INICIATIVAS. 🏠\n\nUn especialista te contactará pronto.\n\nMás info: https://group365.vercel.app`
+      reply = `Hola! Soy el asistente de GROUP 360 INICIATIVAS. 🏠\n\nUn especialista te contactará pronto.\n\nMás info: https://group360iniciativas.com`
     } else {
       try {
         reply = await callOpenAI(conversationMessages, 'gpt-4o-mini', 500)
         console.log('WA AI reply:', reply.slice(0, 100))
       } catch (e: any) {
         console.error('WA: OpenAI error:', e.message)
-        reply = `Gracias por escribirnos. 🏠\n\nUn especialista de GROUP 360 te contactará pronto.\n\nVisítanos: https://group365.vercel.app`
+        reply = `Gracias por escribirnos. 🏠\n\nUn especialista de GROUP 360 te contactará pronto.\n\nVisítanos: https://group360iniciativas.com`
       }
     }
 

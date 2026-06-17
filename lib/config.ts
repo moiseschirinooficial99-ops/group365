@@ -24,7 +24,7 @@ export const config = {
     ciudad: 'Reus',
     provincia: 'Tarragona',
     pais: 'España',
-    web: 'https://group365.vercel.app',
+    web: 'https://group360iniciativas.com',
   },
 
   // ── REDES SOCIALES ───────────────────────────────────

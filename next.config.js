@@ -10,6 +10,16 @@ const nextConfig = {
       { protocol: 'https', hostname: 'ldlppnavezugvkskvlab.supabase.co' },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'group365.vercel.app' }],
+        destination: 'https://group360iniciativas.com/:path*',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig
