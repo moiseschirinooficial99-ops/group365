@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Plus, TrendingUp, Users, Home, Calendar, Flame, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, TrendingUp, Users, Home, Calendar, Flame, X, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react'
 
 const SCORE_BADGE = (score: number) => {
   if (score >= 80) return 'text-red-400 bg-red-900/20 border border-red-500/30'
@@ -219,18 +219,26 @@ export default function Admin() {
   const [tab, setTab] = useState<Tab>('leads')
   const [filter, setFilter] = useState('all')
   const [stats, setStats] = useState({ total: 0, new: 0, hot: 0, totalProps: 0, converted: 0 })
+  const [unreadWA, setUnreadWA] = useState(0)
 
   // Modals
   const [soldModal, setSoldModal] = useState<any>(null)
   const [rentalModal, setRentalModal] = useState<any>(null)
 
   const loadAll = useCallback(async () => {
-    const [leadsRes, propsRes, hotRes, calRes] = await Promise.all([
+    const [leadsRes, propsRes, hotRes, calRes, waRes] = await Promise.all([
       fetch('/api/leads'),
       fetch('/api/properties?all=1').then(r => r.ok ? r : fetch('/api/properties')),
       fetch('/api/leads?hot=1'),
       fetch('/api/admin/calendar').catch(() => ({ json: async () => [] })),
+      fetch('/api/admin/wa-conversations').catch(() => null),
     ])
+
+    if (waRes?.ok) {
+      const waData = await waRes.json().catch(() => [])
+      const unread = (Array.isArray(waData) ? waData : []).reduce((s: number, c: any) => s + (c.unread_count || 0), 0)
+      setUnreadWA(unread)
+    }
     const leadsData: any[] = await leadsRes.json()
     const hotData: any[] = await hotRes.json()
     let calData: any[] = []
@@ -369,9 +377,19 @@ export default function Admin() {
             <span className="green-text">GROUP</span> <span className="gold-text">360</span>
             <span className="text-white/40 text-xl ml-3">Panel de Control</span>
           </h1>
-          <Link href="/admin/nueva-propiedad" className="flex items-center gap-2 btn-primary px-5 py-2.5 text-sm">
-            <Plus size={16} /> Nueva Propiedad
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/admin/mensajes" className="relative flex items-center gap-2 px-4 py-2.5 text-sm rounded-lg bg-[#161D26] border border-white/5 text-[#8B96A5] hover:text-white transition-colors">
+              <MessageSquare size={15} /> Mensajes
+              {unreadWA > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center">
+                  {unreadWA > 9 ? '9+' : unreadWA}
+                </span>
+              )}
+            </Link>
+            <Link href="/admin/nueva-propiedad" className="flex items-center gap-2 btn-primary px-5 py-2.5 text-sm">
+              <Plus size={16} /> Nueva Propiedad
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}

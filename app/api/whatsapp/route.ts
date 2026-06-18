@@ -396,11 +396,25 @@ export async function POST(req: NextRequest) {
     const text = (msg.text?.body || '').trim()
     console.log('WA MESSAGE from', from, ':', text)
 
+    // Detectar si es primer contacto de este número
+    const { count: prevCount } = await supabaseAdmin
+      .from('wa_conversations')
+      .select('*', { count: 'exact', head: true })
+      .eq('phone', from)
+    const isNewContact = (prevCount || 0) === 0
+
     // Guardar mensaje entrante — patrón correcto Supabase v2
     const { error: insertErr } = await supabaseAdmin.from('wa_conversations').insert({
-      phone: from, message: text, direction: 'inbound', wa_message_id: msg.id,
+      phone: from, message: text, direction: 'inbound', wa_message_id: msg.id, is_read: false,
     })
     if (insertErr) console.error('WA: save inbound failed:', insertErr.message)
+
+    // Notificación especial para contacto nuevo
+    if (isNewContact) {
+      await sendTelegramNotification(
+        `🆕 <b>NUEVO CONTACTO WhatsApp</b>\n\n📱 ${from}\n💬 "${text.slice(0, 200)}"\n\n🔗 Ver: https://www.group360iniciativas.com/admin/mensajes`
+      )
+    }
 
     // Historial
     const { data: history, error: histErr } = await supabaseAdmin
