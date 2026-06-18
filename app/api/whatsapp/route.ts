@@ -405,7 +405,7 @@ export async function POST(req: NextRequest) {
 
     // Guardar mensaje entrante — patrón correcto Supabase v2
     const { error: insertErr } = await supabaseAdmin.from('wa_conversations').insert({
-      phone: from, message: text, direction: 'inbound', wa_message_id: msg.id, is_read: false,
+      phone: from, message: text, direction: 'inbound', wa_message_id: msg.id,
     })
     if (insertErr) console.error('WA: save inbound failed:', insertErr.message)
 
