@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Plus, TrendingUp, Users, Home, Calendar, Flame, X, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react'
+import { Plus, TrendingUp, Users, Home, Calendar, Flame, X, ChevronLeft, ChevronRight, MessageSquare, Pencil } from 'lucide-react'
 
 const SCORE_BADGE = (score: number) => {
   if (score >= 80) return 'text-red-400 bg-red-900/20 border border-red-500/30'
@@ -345,6 +345,9 @@ export default function Admin() {
           {p.sold_date && <p className="text-[#8B96A5] text-[10px]">Fecha: {p.sold_date}</p>}
           {showActions && (
             <div className="flex gap-1 mt-2 flex-wrap">
+              <Link href={`/admin/editar-propiedad/${p.id}`} className="flex items-center gap-1 text-[9px] px-2 py-1 rounded bg-[#C9A84C]/15 text-[#C9A84C] border border-[#C9A84C]/30 hover:bg-[#C9A84C]/25 transition-colors">
+                <Pencil size={9} /> Editar
+              </Link>
               {st === 'disponible' && <>
                 <button onClick={() => changePropStatus(p.id, 'negociacion')} className="text-[9px] px-2 py-1 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 transition-colors">Negociación</button>
                 <button onClick={() => changePropStatus(p.id, 'reservada')} className="text-[9px] px-2 py-1 rounded bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/25 transition-colors">Reservar</button>
