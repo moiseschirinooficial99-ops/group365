@@ -140,6 +140,10 @@ export default function EditarPropiedadPage() {
     plot_m2: '',
     estimated_roi: '',
     price_per_night: '',
+    price_high_season: '',
+    price_low_season: '',
+    price_mid_season: '',
+    min_nights: '',
   })
   const [consultarPrecio, setConsultarPrecio] = useState(false)
 
@@ -176,6 +180,10 @@ export default function EditarPropiedadPage() {
           plot_m2: data.plot_m2 != null ? String(data.plot_m2) : '',
           estimated_roi: data.estimated_roi != null ? String(data.estimated_roi) : '',
           price_per_night: data.price_per_night != null ? String(data.price_per_night) : '',
+          price_high_season: data.price_high_season != null ? String(data.price_high_season) : '',
+          price_low_season: data.price_low_season != null ? String(data.price_low_season) : '',
+          price_mid_season: data.price_mid_season != null ? String(data.price_mid_season) : '',
+          min_nights: data.min_nights != null ? String(data.min_nights) : '',
         })
         setConsultarPrecio(!data.price || data.price === 0)
         const imgs: string[] = []
@@ -217,6 +225,9 @@ export default function EditarPropiedadPage() {
     if (form.title !== property.title) changes.push(`Título: "${property.title}" → "${form.title}"`)
     const newPrice = consultarPrecio ? 0 : Number(form.price)
     if (newPrice !== Number(property.price)) changes.push(`Precio: €${Number(property.price).toLocaleString('es-ES')} → €${newPrice.toLocaleString('es-ES')}`)
+    if (form.price_per_night && Number(form.price_per_night) !== Number(property.price_per_night)) changes.push(`Precio/noche: €${property.price_per_night || 0} → €${form.price_per_night}`)
+    if (form.price_high_season && Number(form.price_high_season) !== Number(property.price_high_season)) changes.push(`T.Alta: €${property.price_high_season || 0} → €${form.price_high_season}`)
+    if (form.price_low_season && Number(form.price_low_season) !== Number(property.price_low_season)) changes.push(`T.Baja: €${property.price_low_season || 0} → €${form.price_low_season}`)
     if (form.status !== (property.status || 'disponible')) changes.push(`Estado: ${property.status || 'disponible'} → ${form.status}`)
     if (form.location !== property.location) changes.push(`Ubicación: ${property.location} → ${form.location}`)
     if (deletedImages.length) changes.push(`Fotos eliminadas: ${deletedImages.length}`)
@@ -266,6 +277,10 @@ export default function EditarPropiedadPage() {
         plot_m2: form.plot_m2 ? Number(form.plot_m2) : null,
         estimated_roi: form.estimated_roi ? Number(form.estimated_roi) : null,
         price_per_night: form.price_per_night ? Number(form.price_per_night) : null,
+        price_high_season: form.price_high_season ? Number(form.price_high_season) : null,
+        price_low_season: form.price_low_season ? Number(form.price_low_season) : null,
+        min_nights: form.min_nights ? Number(form.min_nights) : null,
+        ...(form.price_mid_season ? { price_mid_season: Number(form.price_mid_season) } : {}),
         images: finalImages,
         main_image: finalImages[0] || null,
         is_active: form.status !== 'vendida',
@@ -303,7 +318,15 @@ export default function EditarPropiedadPage() {
 
   const handleSaveClick = () => {
     if (!form.title.trim()) { setError('El título no puede estar vacío'); return }
-    if (!consultarPrecio && (!form.price || Number(form.price) <= 0)) { setError('El precio debe ser mayor que 0. Activa "Precio a consultar" si aplica.'); return }
+    if (form.channel === 'alquiler') {
+      if (!form.price_per_night || Number(form.price_per_night) <= 0) {
+        setError('Introduce el precio por noche para esta propiedad de alquiler.')
+        return
+      }
+    } else if (!consultarPrecio && (!form.price || Number(form.price) <= 0)) {
+      setError('El precio debe ser mayor que 0. Activa "Precio a consultar" si aplica.')
+      return
+    }
     setError('')
 
     const goingVendida = form.status === 'vendida' && (property?.status || 'disponible') !== 'vendida'
@@ -571,9 +594,30 @@ export default function EditarPropiedadPage() {
             )}
 
             {form.channel === 'alquiler' && (
-              <div>
-                <label className="text-xs text-[#8B96A5] block mb-1.5">Precio/noche €</label>
-                <input className="input" type="number" placeholder="350" value={form.price_per_night} onChange={e => set('price_per_night', e.target.value)} />
+              <div className="space-y-3 border-t border-white/5 pt-3">
+                <p className="text-xs text-[#C9A84C] font-semibold uppercase tracking-wider">Precios por temporada</p>
+                <div>
+                  <label className="text-xs text-[#8B96A5] block mb-1.5">Precio base/noche € *</label>
+                  <input className="input" type="number" placeholder="350" value={form.price_per_night} onChange={e => set('price_per_night', e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-[#8B96A5] block mb-1.5">☀️ Temporada alta €/noche</label>
+                    <input className="input" type="number" placeholder="500" value={form.price_high_season} onChange={e => set('price_high_season', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#8B96A5] block mb-1.5">🌤️ Temporada media €/noche</label>
+                    <input className="input" type="number" placeholder="350" value={form.price_mid_season} onChange={e => set('price_mid_season', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#8B96A5] block mb-1.5">❄️ Temporada baja €/noche</label>
+                    <input className="input" type="number" placeholder="220" value={form.price_low_season} onChange={e => set('price_low_season', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#8B96A5] block mb-1.5">Mínimo de noches</label>
+                    <input className="input" type="number" placeholder="2" value={form.min_nights} onChange={e => set('min_nights', e.target.value)} />
+                  </div>
+                </div>
               </div>
             )}
           </div>

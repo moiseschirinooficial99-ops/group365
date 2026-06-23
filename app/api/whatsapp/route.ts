@@ -374,7 +374,19 @@ SI el cliente usa lenguaje casual/básico (preguntas simples, "tú", emojis, men
   Ejemplo: "Le muestro la rentabilidad neta estimada — es decir, lo que ganaría después de gastos"
 → Ve elevando gradualmente el vocabulario a medida que el cliente demuestra más interés o conocimiento
 
-NUNCA hagas sentir al cliente que no entiende algo. La sofisticación debe sumar valor, no crear distancia.`
+NUNCA hagas sentir al cliente que no entiende algo. La sofisticación debe sumar valor, no crear distancia.
+
+══════════════════════════════════════════════
+REGLA CRÍTICA DE PRECISIÓN — DATOS EN TIEMPO REAL
+══════════════════════════════════════════════
+
+La información de precios, disponibilidad y estado de cada propiedad que recibes en {properties_context} es SIEMPRE la versión más actualizada en este momento exacto, consultada en tiempo real desde la base de datos.
+
+NUNCA uses un precio o dato que hayas mencionado en mensajes anteriores de la conversación si no coincide con el contexto actual — el contexto actual SIEMPRE tiene prioridad porque refleja cualquier cambio reciente hecho por el equipo.
+
+Si detectas que un precio cambió respecto a lo que dijiste antes en la misma conversación, informa naturalmente: "Actualizo: el precio correcto es [X]€".
+
+Para propiedades de alquiler turístico, usa SIEMPRE los precios por temporada del contexto: temporada alta, media y baja. Nunca inventes ni estimes un precio que no esté en el contexto actual.`
 
 async function getWAToken(): Promise<string | null> {
   // Try Supabase first (auto-renewed token)
@@ -512,9 +524,22 @@ export async function POST(req: NextRequest) {
 
     const propsContext = properties?.length
       ? properties.map((p: any) => {
-          const precio = Number(p.price) > 0
-            ? `${Number(p.price).toLocaleString('es-ES')}€`
-            : 'Precio a consultar'
+          const isAlquiler = p.channel === 'alquiler' || p.channel === 'alquiler_turistico'
+
+          let precioInfo = ''
+          if (isAlquiler) {
+            const lineasPrecio: string[] = []
+            if (p.price_per_night) lineasPrecio.push(`Base: €${p.price_per_night}/noche`)
+            if (p.price_high_season) lineasPrecio.push(`Temporada alta: €${p.price_high_season}/noche`)
+            if (p.price_mid_season) lineasPrecio.push(`Temporada media: €${p.price_mid_season}/noche`)
+            if (p.price_low_season) lineasPrecio.push(`Temporada baja: €${p.price_low_season}/noche`)
+            if (p.min_nights) lineasPrecio.push(`Mínimo ${p.min_nights} noches`)
+            precioInfo = lineasPrecio.length > 0 ? lineasPrecio.join(' | ') : 'Precio a consultar'
+          } else {
+            precioInfo = Number(p.price) > 0
+              ? `${Number(p.price).toLocaleString('es-ES')}€`
+              : 'Precio a consultar'
+          }
 
           const caracteristicas = [
             p.bedrooms && `${p.bedrooms} dormitorios`,
@@ -537,9 +562,9 @@ export async function POST(req: NextRequest) {
           if (desc.toLowerCase().includes('solarium') || desc.toLowerCase().includes('solárium')) amenidades.push('solárium')
 
           return `PROPIEDAD: ${p.title}
-Tipo: ${p.type || p.channel || 'venta'} | Estado: ${p.status || p.property_status || 'disponible'}
+Tipo: ${isAlquiler ? 'alquiler_turistico' : (p.type || p.channel || 'venta')} | Estado: ${p.status || p.property_status || 'disponible'}
 Ubicación: ${p.location}
-Precio: ${precio}
+Precio: ${precioInfo}
 Características: ${caracteristicas || 'ver descripción'}
 Extras: ${amenidades.length > 0 ? amenidades.join(', ') : 'ver descripción'}
 Descripción completa: ${p.description || 'Sin descripción'}

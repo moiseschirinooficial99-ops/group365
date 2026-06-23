@@ -28,10 +28,11 @@ export async function GET(req: NextRequest) {
 }
 
 const ALLOWED_COLUMNS = new Set([
-  'title','description','price','price_per_night','location','zone',
-  'latitude','longitude','property_type','channel','bedrooms','bathrooms',
-  'area_sqm','yearly_rent','estimated_roi','exp_property_id',
-  'main_image','images','features','is_featured','is_active','created_by',
+  'title','description','price','price_per_night','price_high_season','price_low_season',
+  'location','zone','latitude','longitude','property_type','channel','status',
+  'bedrooms','bathrooms','area_sqm','plot_m2','yearly_rent','estimated_roi',
+  'exp_property_id','main_image','images','features','is_featured','is_active',
+  'created_by','min_nights',
 ])
 
 function pickAllowed(body: Record<string, any>) {
@@ -96,8 +97,11 @@ export async function PUT(req: NextRequest) {
 
     if (error) throw error
 
+    const precioDisplay = updates.price_per_night > 0
+      ? `€${Number(updates.price_per_night).toLocaleString('es-ES')}/noche`
+      : `€${Number(updates.price || 0).toLocaleString('es-ES')}`
     await sendTelegramNotification(
-      `✏️ <b>Propiedad actualizada</b>\n\n🏠 ${updates.title || 'Sin título'}\n💰 €${Number(updates.price || 0).toLocaleString('es-ES')}\n📍 ${updates.location || '-'}${changes_summary ? `\n\n📝 Cambios: ${changes_summary}` : ''}`
+      `✏️ <b>Propiedad actualizada</b>\n\n🏠 ${updates.title || 'Sin título'}\n💰 ${precioDisplay}\n📍 ${updates.location || '-'}${changes_summary ? `\n\n📝 Cambios: ${changes_summary}` : ''}\n\n🤖 El bot de WhatsApp ya refleja los datos nuevos automáticamente.`
     )
 
     return NextResponse.json({ data, ok: true })

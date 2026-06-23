@@ -10,6 +10,7 @@ import {
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PropertyCard from '@/components/cards/PropertyCard'
+import Logo3D from '@/components/Logo3D'
 import { config, waLink } from '@/lib/config'
 
 /* ─── Casos de Éxito ─── */
@@ -289,17 +290,10 @@ export default function HomePage() {
             <div className="relative flex items-center justify-center">
               <div className="absolute w-80 h-80 rounded-full bg-[#C9A84C]/10 blur-3xl" />
               <div className="absolute w-52 h-52 rounded-full bg-[#1B7F6F]/12 blur-2xl" />
-              <motion.img
-                src="/logo.png"
-                alt="GROUP 360"
-                animate={{ y: [0, -14, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                style={{
-                  width: 300, height: 300,
-                  filter: 'drop-shadow(0 0 60px rgba(201,168,76,0.75)) drop-shadow(0 0 120px rgba(27,127,111,0.4)) drop-shadow(0 24px 50px rgba(0,0,0,0.7))',
-                  mixBlendMode: 'lighten',
-                }}
-                className="object-contain relative z-10"
+              <Logo3D
+                size={300}
+                autoRotate={true}
+                imageFilter="drop-shadow(0 0 60px rgba(201,168,76,0.75)) drop-shadow(0 0 120px rgba(27,127,111,0.4)) drop-shadow(0 24px 50px rgba(0,0,0,0.7))"
               />
             </div>
           </div>
@@ -416,17 +410,10 @@ export default function HomePage() {
             <div className="relative flex items-center justify-center">
               <div className="absolute w-72 h-72 rounded-full bg-[#C9A84C]/10 blur-3xl" />
               <div className="absolute w-48 h-48 rounded-full bg-[#1B7F6F]/12 blur-2xl" />
-              <motion.img
-                src="/logo.png"
-                alt="GROUP 360"
-                animate={{ y: [0, -12, 0] }}
-                transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-                style={{
-                  width: 220, height: 220,
-                  filter: 'drop-shadow(0 0 55px rgba(201,168,76,0.7)) drop-shadow(0 0 110px rgba(27,127,111,0.35))',
-                  mixBlendMode: 'lighten',
-                }}
-                className="object-contain relative z-10"
+              <Logo3D
+                size={220}
+                autoRotate={true}
+                imageFilter="drop-shadow(0 0 55px rgba(201,168,76,0.7)) drop-shadow(0 0 110px rgba(27,127,111,0.35))"
               />
             </div>
           </div>

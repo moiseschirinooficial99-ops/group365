@@ -2,14 +2,19 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'GROUP 360 INICIATIVAS | Visión 360° del Mercado Inmobiliario',
-  description: 'Alquileres turísticos, compras exclusivas e inversiones premium en España. ROI 4-6% garantizado.',
-  icons: { icon: '/favicon.ico' },
+  metadataBase: new URL('https://group360iniciativas.com'),
+  title: 'GROUP 360 INICIATIVAS | Asesoría Patrimonial Inmobiliaria',
+  description: 'Asesoría patrimonial inmobiliaria 360°. Alquileres turísticos, activos prime e inversión en España. ROI 4-6% garantizado.',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/logo.png',
+  },
   openGraph: {
     title: 'GROUP 360 INICIATIVAS',
-    description: 'Visión 360° del Mercado Inmobiliario',
+    description: 'Asesoría patrimonial inmobiliaria 360°. Cartera de activos prime e inversión en España.',
     locale: 'es_ES',
     type: 'website',
+    images: ['/logo.png'],
   },
 }
 

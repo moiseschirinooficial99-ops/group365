@@ -30,15 +30,21 @@ export default function Header() {
     }`}>
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 shrink-0">
-          <Image
-            src="/logo.png"
-            alt="GROUP 360 INICIATIVAS"
-            width={240}
-            height={240}
-            quality={100}
-            priority={true}
-            style={{ objectFit: 'contain', width: 'auto', height: '56px', mixBlendMode: 'lighten' }}
-          />
+          <motion.div
+            whileHover={{ rotateY: 20, scale: 1.08 }}
+            transition={{ duration: 0.35 }}
+            style={{ perspective: '800px', display: 'inline-block' }}
+          >
+            <Image
+              src="/logo.png"
+              alt="GROUP 360 INICIATIVAS"
+              width={240}
+              height={240}
+              quality={100}
+              priority={true}
+              style={{ objectFit: 'contain', width: 'auto', height: '56px', mixBlendMode: 'lighten' }}
+            />
+          </motion.div>
           <div className="hidden sm:block">
             <span className="font-playfair font-bold text-lg tracking-wide">
               <span className="text-[#1B7F6F]">{config.empresa.nombre.split(' ')[0]}</span>

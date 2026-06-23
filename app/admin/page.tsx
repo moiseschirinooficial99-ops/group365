@@ -306,8 +306,9 @@ export default function Admin() {
     loadAll()
   }
 
-  const saleProps = props.filter(p => p.channel !== 'alquiler')
-  const rentalProps = props.filter(p => p.channel === 'alquiler')
+  const isRental = (p: any) => p.channel === 'alquiler' || p.channel === 'alquiler_turistico'
+  const saleProps = props.filter(p => !isRental(p))
+  const rentalProps = props.filter(p => isRental(p))
 
   const byStatus = (status: string) => saleProps.filter(p => (p.status || 'disponible') === status)
 
