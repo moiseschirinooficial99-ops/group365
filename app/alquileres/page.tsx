@@ -66,8 +66,8 @@ export default function AlquileresPage() {
       <section className="section">
         <div className="container">
           <motion.div initial="hidden" whileInView="show" variants={FADE_UP} viewport={{ once: true }} className="text-center mb-14">
-            <h2 className="font-playfair text-4xl font-bold mb-3">Propiedades Disponibles</h2>
-            <p className="text-gray-500">Gestión completa, máxima rentabilidad</p>
+            <h2 className="font-playfair text-4xl font-bold mb-3">Cartera de Activos</h2>
+            <p className="text-gray-500">Gestión completa, rentabilidad neta estimada al máximo</p>
           </motion.div>
           {loadingProps ? (
             <div className="grid md:grid-cols-3 gap-6 mb-16">
@@ -106,9 +106,9 @@ export default function AlquileresPage() {
                   value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
                 <input className="input" type="tel" placeholder="WhatsApp (+34...)"
                   value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
-                <input className="input" type="number" placeholder="Número de personas"
+                <input className="input" type="number" placeholder="Capacidad de huéspedes"
                   value={form.guests} onChange={e => setForm({ ...form, guests: e.target.value })} />
-                <input className="input" placeholder="Fechas (ej: 15-22 agosto)"
+                <input className="input" placeholder="Check-in / Check-out (ej: 15-22 agosto)"
                   value={form.dates} onChange={e => setForm({ ...form, dates: e.target.value })} />
                 <button type="submit" disabled={loading} className="btn-primary w-full py-4">
                   {loading ? 'Enviando...' : 'Solicitar disponibilidad →'}

@@ -10,7 +10,7 @@ export const config = {
     nombreCompleto: 'GRUPO 360 INICIATIVAS S.L.',
     slogan: 'Iniciativas',
     nif: 'B13911979',
-    descripcion: 'Visión 360° del mercado inmobiliario. Propiedades premium, inversiones y alquileres en España.',
+    descripcion: 'Asesoría patrimonial inmobiliaria 360°. Cartera de activos prime, estrategias de inversión y gestión vacacional en España.',
     fundada: '2010',
     experiencia: '15+',
   },
@@ -136,7 +136,7 @@ export const config = {
   // ── SEO ──────────────────────────────────────────────
   seo: {
     titulo: 'GROUP 360 INICIATIVAS — Inmobiliaria Premium España',
-    descripcion: 'Propiedades premium, inversión en deuda bancaria y alquileres turísticos en España. GROUP 360 INICIATIVAS — Visión 360° del mercado inmobiliario.',
+    descripcion: 'Asesoría patrimonial inmobiliaria en España. Cartera de activos prime, inversión en activos distressed y gestión vacacional. GROUP 360 INICIATIVAS — Visión 360° del mercado.',
     keywords: 'inmobiliaria españa, propiedades premium, inversión inmobiliaria, alquiler turístico, deuda bancaria',
     ogImage: '/logo.png',
   },

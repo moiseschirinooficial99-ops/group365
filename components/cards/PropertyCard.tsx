@@ -4,9 +4,9 @@ import { Bed, Bath, Maximize2, MapPin, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
 
 const CHANNEL_LABEL: Record<string, string> = {
-  exp:      'Disponible',
+  exp:      'Activo disponible',
   personal: 'Exclusiva',
-  bancaria: 'Bancaria',
+  bancaria: 'Activo bancario',
   alquiler: 'Turístico',
 }
 

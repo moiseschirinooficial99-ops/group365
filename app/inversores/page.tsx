@@ -20,7 +20,7 @@ const BENEFITS = [
 ]
 
 const STEPS = [
-  { num: '01', title: 'Recibe el portafolio', desc: 'Acceso exclusivo a propiedades bancarias seleccionadas con potencial de rentabilidad demostrado.' },
+  { num: '01', title: 'Accede al portafolio exclusivo', desc: 'Acceso a activos seleccionados con rentabilidad neta estimada demostrada y due diligence completo.' },
   { num: '02', title: 'Reserva con €6.000', desc: 'Bloquea la propiedad de tu interés con una reserva totalmente reembolsable hasta la aceptación.' },
   { num: '03', title: 'Oferta de quita al banco', desc: 'Presentamos tu oferta negociada directamente a la entidad bancaria con nuestra capacidad de negociación.' },
   { num: '04', title: 'Respuesta en ~7 días', desc: 'El banco responde en aproximadamente 7 días hábiles con aceptación, contraoferta o rechazo.' },
@@ -161,10 +161,10 @@ export default function InversoresPage() {
         <div className="max-w-2xl mx-auto text-center">
           <motion.div initial="hidden" whileInView="show" variants={STAGGER} viewport={{ once: true }}>
             <motion.h2 variants={FADE_UP} className="font-playfair text-4xl font-bold mb-5">
-              Empieza a invertir hoy
+              Construye tu estrategia patrimonial
             </motion.h2>
             <motion.p variants={FADE_UP} className="text-[#8B96A5] mb-10">
-              Regístrate y accede a tu dashboard personalizado en menos de 5 minutos.
+              Regístrate y accede a tu portafolio exclusivo en menos de 5 minutos.
             </motion.p>
             <motion.div variants={FADE_UP} className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/inversores/register" className="btn-primary text-base px-12 py-4 inline-block">

@@ -177,7 +177,7 @@ export default function Dashboard() {
   const TABS = [
     { id: 'propiedades', label: 'Propiedades', icon: Home },
     { id: 'consultas',   label: 'Mis consultas', icon: FileText },
-    { id: 'calculadora', label: 'Calculadora ROI', icon: Calculator },
+    { id: 'calculadora', label: 'Simulador ROI', icon: Calculator },
     { id: 'contacto',    label: 'Contacto', icon: MessageSquare },
   ] as const
 
@@ -298,7 +298,7 @@ export default function Dashboard() {
               {nplCalc ? (
                 <div className="space-y-3">
                   <div className="bg-[#161D26] rounded-xl p-5 text-center">
-                    <p className="text-[#8B96A5] text-xs uppercase tracking-wider mb-1">ROI Estimado</p>
+                    <p className="text-[#8B96A5] text-xs uppercase tracking-wider mb-1">Rentabilidad neta estimada</p>
                     <p className="font-playfair text-4xl font-bold text-[#C9A84C]">{nplCalc.roi.toFixed(1)}%</p>
                     <p className="text-[#8B96A5] text-xs mt-1">Plazo estimado: 8-16 meses</p>
                   </div>
@@ -480,7 +480,7 @@ export default function Dashboard() {
             <div className="card p-6">
               <h3 className="font-playfair text-lg font-bold mb-5 flex items-center gap-2">
                 <Calculator size={18} className="text-[#C9A84C]" />
-                Calculadora de rentabilidad
+                Simulador de rentabilidad
               </h3>
               <div className="space-y-4">
                 <div>
@@ -511,7 +511,7 @@ export default function Dashboard() {
                   </h3>
                   <div className="space-y-4">
                     <div className="bg-[#161D26] rounded-xl p-5 text-center">
-                      <p className="text-[#8B96A5] text-xs uppercase tracking-wider mb-1">ROI Anual Neto</p>
+                      <p className="text-[#8B96A5] text-xs uppercase tracking-wider mb-1">Rentabilidad neta estimada</p>
                       <p className={`font-playfair text-4xl font-bold ${roiCalc.roi >= 5 ? 'text-[#1B7F6F]' : roiCalc.roi >= 3 ? 'gold-text' : 'text-red-400'}`}>
                         {roiCalc.roi.toFixed(2)}%
                       </p>
@@ -550,7 +550,7 @@ export default function Dashboard() {
             className="grid md:grid-cols-2 gap-6">
             <div className="card p-6">
               <h3 className="font-playfair text-lg font-bold mb-2">Contacto directo</h3>
-              <p className="text-[#8B96A5] text-sm mb-6">Habla directamente con tu gestor de inversiones.</p>
+              <p className="text-[#8B96A5] text-sm mb-6">Habla directamente con tu asesor patrimonial.</p>
 
               <a
                 href={`https://wa.me/34611251818?text=Hola, soy ${profile?.name || 'un inversor'} y quiero más información sobre oportunidades de inversión.`}
@@ -586,7 +586,7 @@ export default function Dashboard() {
                 <form onSubmit={handleQuickMsg} className="space-y-4">
                   <textarea
                     className="input resize-none h-32"
-                    placeholder="¿En qué podemos ayudarte? Cuéntanos tus objetivos de inversión..."
+                    placeholder="¿En qué podemos asesorarte? Cuéntanos tu estrategia patrimonial de inversión..."
                     value={msgText}
                     onChange={e => setMsgText(e.target.value)}
                     required

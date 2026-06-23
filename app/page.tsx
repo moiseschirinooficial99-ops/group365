@@ -75,7 +75,7 @@ function CasosDeExito() {
 
         <motion.div initial="hidden" whileInView="show" variants={FU} viewport={{ once: true }} className="text-center card p-8 border border-[#C9A84C]/15">
           <p className="text-white font-semibold text-lg mb-2">¿Tienes una propiedad similar?</p>
-          <p className="text-[#8B96A5] text-sm mb-5">Cuéntanos y te ayudamos a encontrar el comprador perfecto.</p>
+          <p className="text-[#8B96A5] text-sm mb-5">Cuéntanos y diseñamos juntos la estrategia de venta con visión 360°.</p>
           <a href="https://wa.me/34611251818?text=Hola, tengo una propiedad que quiero vender. ¿Podéis ayudarme?"
             target="_blank" rel="noopener noreferrer"
             className="btn-primary inline-flex items-center gap-2">
@@ -269,7 +269,7 @@ export default function HomePage() {
                   <div className="font-playfair font-bold text-xl gold-text">
                     <Counter target={250} suffix="+" />
                   </div>
-                  <div className="text-xs text-[#8B96A5]">Propiedades en ubicaciones premium</div>
+                  <div className="text-xs text-[#8B96A5]">Activos en ubicaciones prime</div>
                 </div>
               </motion.div>
 
@@ -474,7 +474,7 @@ export default function HomePage() {
             <motion.div variants={FU}>
               <p className="text-[#1B7F6F] text-xs font-semibold tracking-[0.4em] uppercase mb-3">Propiedades</p>
               <h2 className="font-playfair text-4xl md:text-5xl font-bold max-w-xl leading-tight">
-                Explora Todas Nuestras<br />Propiedades Disponibles
+                Explora Nuestra<br />Cartera de Activos Seleccionados
               </h2>
             </motion.div>
             <motion.div variants={FU} className="hidden md:block shrink-0">
@@ -597,7 +597,7 @@ export default function HomePage() {
               <span className="gold-text">Perfecta Hoy</span>
             </motion.h2>
             <motion.p variants={FU} className="text-[#8B96A5] mb-10 text-lg font-light">
-              Contáctanos para asesoría experta inmobiliaria personalizada.
+              Contáctanos para una asesoría patrimonial inmobiliaria personalizada.
             </motion.p>
             <motion.div variants={FU} className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/#contacto" className="btn-primary text-base px-10 py-4 inline-flex items-center justify-center gap-2">
