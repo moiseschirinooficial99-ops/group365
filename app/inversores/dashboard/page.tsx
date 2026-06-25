@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { motion } from 'framer-motion'
-import { MapPin, Bed, Bath, Maximize2, Calculator, MessageSquare, LogOut, TrendingUp, Clock, User, Home, FileText } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { MapPin, Bed, Bath, Maximize2, Calculator, MessageSquare, LogOut, TrendingUp, Clock, User, Home, FileText, ChevronDown } from 'lucide-react'
 import Header from '@/components/layout/Header'
 
 type Tab = 'propiedades' | 'consultas' | 'calculadora' | 'contacto'
@@ -71,6 +71,14 @@ export default function Dashboard() {
   const [msgSent, setMsgSent] = useState(false)
   const [msgLoading, setMsgLoading] = useState(false)
 
+  // 5 verticales
+  type InvCat = 'npl' | 'reo' | 'cesion_remate' | 'producto_ocupado' | 'fondo'
+  const [invOpps, setInvOpps] = useState<Record<InvCat, any[]>>({ npl: [], reo: [], cesion_remate: [], producto_ocupado: [], fondo: [] })
+  const [invLoaded, setInvLoaded] = useState(false)
+  const [expandedCat, setExpandedCat] = useState<InvCat | null>(null)
+  const [invInterestSent, setInvInterestSent] = useState<Set<string>>(new Set())
+  const [sendingInvInterest, setSendingInvInterest] = useState<string | null>(null)
+
   useEffect(() => {
     ;(async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -88,6 +96,20 @@ export default function Dashboard() {
       setProperties(props || [])
       setConsultas((leads || []).filter((l: any) => l.source === 'inversores_interest'))
       setLoading(false)
+
+      // Load investment opportunities (including non-public ones for verified users)
+      fetch('/api/investment-opportunities?status=disponible')
+        .then(r => r.json())
+        .then((data: any[]) => {
+          if (!Array.isArray(data)) return
+          const grouped: Record<string, any[]> = { npl: [], reo: [], cesion_remate: [], producto_ocupado: [], fondo: [] }
+          for (const op of data) {
+            if (grouped[op.category]) grouped[op.category].push(op)
+          }
+          setInvOpps(grouped as any)
+          setInvLoaded(true)
+        })
+        .catch(() => setInvLoaded(true))
     })()
   }, [])
 
@@ -166,6 +188,36 @@ export default function Dashboard() {
     await supabase.auth.signOut()
     window.location.href = '/inversores/login'
   }
+
+  const handleInvInterest = async (opId: string, opTitle: string, category: string) => {
+    if (invInterestSent.has(opId) || sendingInvInterest) return
+    setSendingInvInterest(opId)
+    try {
+      await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: profile?.name || user?.email,
+          email: user?.email,
+          phone: profile?.phone || '',
+          source: `inversor_privado_${category}`,
+          scoring_result: 90,
+          notes: `Interesado en oportunidad: ${opTitle} (${category})`,
+        }),
+      })
+      setInvInterestSent(prev => { const next = new Set(prev); next.add(opId); return next })
+    } finally {
+      setSendingInvInterest(null)
+    }
+  }
+
+  const INV_VERTICALS: { id: string; icon: string; label: string; accentColor: string; borderColor: string }[] = [
+    { id: 'npl',             icon: '📋', label: 'NPL',               accentColor: 'text-[#C9A84C]', borderColor: 'border-[#C9A84C]/25' },
+    { id: 'reo',             icon: '🏦', label: 'REO',               accentColor: 'text-[#1B7F6F]', borderColor: 'border-[#1B7F6F]/25' },
+    { id: 'cesion_remate',   icon: '⚖️', label: 'Cesión de Remate',  accentColor: 'text-blue-400',  borderColor: 'border-blue-400/25' },
+    { id: 'producto_ocupado',icon: '🔑', label: 'Producto Ocupado',  accentColor: 'text-orange-400', borderColor: 'border-orange-400/25' },
+    { id: 'fondo',           icon: '💼', label: 'Fondo GROUP 360',   accentColor: 'text-purple-400', borderColor: 'border-purple-400/25' },
+  ]
 
   if (loading) return (
     <div className="min-h-screen bg-[#0F1419] flex items-center justify-center">
@@ -254,6 +306,114 @@ export default function Dashboard() {
               <p className="text-[#8B96A5] text-xs mb-1">Consultas activas</p>
               <p className="gold-text text-sm font-bold">{consultas.length}</p>
             </div>
+          </div>
+        </motion.div>
+
+        {/* ── SECCIÓN: 5 VERTICALES DE INVERSIÓN ── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+          className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-[#C9A84C] text-xs font-bold tracking-[0.25em] uppercase mb-0.5">Panel exclusivo</p>
+              <h2 className="font-playfair text-xl font-bold">5 Verticales de Inversión</h2>
+            </div>
+            <span className="text-xs text-[#8B96A5]">Oportunidades disponibles para ti</span>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {INV_VERTICALS.map(v => {
+              const ops: any[] = invOpps[v.id as keyof typeof invOpps] || []
+              const isOpen = expandedCat === v.id
+              return (
+                <div key={v.id} className={`${isOpen ? 'sm:col-span-2 lg:col-span-5' : ''}`}>
+                  {/* Tab card */}
+                  <button
+                    onClick={() => setExpandedCat(isOpen ? null : v.id as any)}
+                    className={`w-full text-left card p-4 border transition-all ${isOpen ? `${v.borderColor}` : 'border-white/5 hover:border-white/15'}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">{v.icon}</span>
+                        <div>
+                          <p className={`font-semibold text-sm ${isOpen ? v.accentColor : 'text-white'}`}>{v.label}</p>
+                          <p className="text-[#8B96A5] text-[10px]">{ops.length} oportunidad{ops.length !== 1 ? 'es' : ''}</p>
+                        </div>
+                      </div>
+                      <ChevronDown size={14} className={`text-[#8B96A5] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    </div>
+                  </button>
+
+                  {/* Expanded panel */}
+                  <AnimatePresence>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                      >
+                        <div className={`card p-5 mt-1 border ${v.borderColor}`}>
+                          {!invLoaded ? (
+                            <p className="text-[#8B96A5] text-sm">Cargando oportunidades...</p>
+                          ) : ops.length === 0 ? (
+                            <div className="text-center py-4">
+                              <p className="text-[#8B96A5] text-sm mb-3">
+                                Sin activos disponibles en este momento. Te avisamos cuando haya una nueva oportunidad.
+                              </p>
+                              <a
+                                href={`https://wa.me/34611251818?text=Hola, soy ${profile?.name || 'un inversor'} y quiero que me avisen de oportunidades de ${v.label}.`}
+                                target="_blank" rel="noopener noreferrer"
+                                className={`inline-block text-xs px-4 py-2 rounded-lg border font-semibold ${v.accentColor} ${v.borderColor} hover:bg-white/5 transition-colors`}
+                              >
+                                Avísame cuando haya nuevas →
+                              </a>
+                            </div>
+                          ) : (
+                            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {ops.map(op => {
+                                const roi = op.roi_estimated || op.annual_return_pct
+                                const price = op.offer_price || op.minimum_investment
+                                const sent = invInterestSent.has(op.id)
+                                return (
+                                  <div key={op.id} className="bg-[#0F1419] border border-white/10 rounded-xl p-4">
+                                    <div className="flex items-start justify-between gap-2 mb-2">
+                                      <p className="text-white text-sm font-semibold line-clamp-2">{op.title}</p>
+                                      {!op.is_public && (
+                                        <span className="shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/30 font-bold">
+                                          EXCLUSIVO
+                                        </span>
+                                      )}
+                                    </div>
+                                    {op.location && <p className="text-[#8B96A5] text-xs mb-2">📍 {op.location}</p>}
+                                    <div className="flex flex-wrap gap-1.5 mb-3">
+                                      {roi && <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${v.accentColor} ${v.borderColor} bg-white/5`}>{roi}% ROI</span>}
+                                      {price && <span className="text-[10px] px-2 py-0.5 rounded-full border border-white/10 text-[#8B96A5]">€{Number(price).toLocaleString('es-ES')}</span>}
+                                      {op.estimated_timeline && <span className="text-[10px] text-[#8B96A5]">{op.estimated_timeline}</span>}
+                                    </div>
+                                    <button
+                                      onClick={() => handleInvInterest(op.id, op.title, v.id)}
+                                      disabled={sent || sendingInvInterest === op.id}
+                                      className={`w-full py-2 rounded-lg text-xs font-medium transition-all ${
+                                        sent
+                                          ? 'bg-[#1B7F6F]/10 border border-[#1B7F6F]/25 text-[#1B7F6F] cursor-default'
+                                          : 'btn-primary'
+                                      }`}
+                                    >
+                                      {sent ? '✓ Solicitud enviada' : sendingInvInterest === op.id ? 'Enviando...' : 'Me interesa'}
+                                    </button>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )
+            })}
           </div>
         </motion.div>
 

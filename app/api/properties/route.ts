@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
 
 const ALLOWED_COLUMNS = new Set([
   'title','description','price','price_per_night','price_high_season','price_low_season',
+  'price_mid_season',
   'location','zone','latitude','longitude','property_type','channel','status',
   'bedrooms','bathrooms','area_sqm','plot_m2','yearly_rent','estimated_roi',
   'exp_property_id','main_image','images','features','is_featured','is_active',

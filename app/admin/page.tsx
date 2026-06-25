@@ -382,6 +382,12 @@ export default function Admin() {
             <span className="text-white/40 text-xl ml-3">Panel de Control</span>
           </h1>
           <div className="flex items-center gap-3">
+            <Link href="/admin/inventario" className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-lg bg-[#161D26] border border-white/5 text-[#8B96A5] hover:text-white transition-colors">
+              <Home size={15} /> Inventario
+            </Link>
+            <Link href="/admin/oportunidades" className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-lg bg-[#161D26] border border-[#C9A84C]/20 text-[#C9A84C] hover:bg-[#C9A84C]/10 transition-colors">
+              <TrendingUp size={15} /> Oportunidades
+            </Link>
             <Link href="/admin/mensajes" className="relative flex items-center gap-2 px-4 py-2.5 text-sm rounded-lg bg-[#161D26] border border-white/5 text-[#8B96A5] hover:text-white transition-colors">
               <MessageSquare size={15} /> Mensajes
               {unreadWA > 0 && (
