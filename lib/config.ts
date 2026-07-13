@@ -17,7 +17,7 @@ export const config = {
 
   // ── CONTACTO ─────────────────────────────────────────
   contacto: {
-    email: 'info@group360.es',
+    email: 'info@group360iniciativas.com',
     whatsapp: '34611251818',
     whatsappDisplay: '+34 611 25 18 18',
     direccion: 'Passeig de Les Palmeres 16',
