@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Plus, TrendingUp, Users, Home, Calendar, Flame, X, ChevronLeft, ChevronRight, MessageSquare, Pencil } from 'lucide-react'
+import { Plus, TrendingUp, Users, Home, Calendar, Flame, X, ChevronLeft, ChevronRight, MessageSquare, Pencil, FileText } from 'lucide-react'
 
 const SCORE_BADGE = (score: number) => {
   if (score >= 80) return 'text-red-400 bg-red-900/20 border border-red-500/30'
@@ -387,6 +387,9 @@ export default function Admin() {
             </Link>
             <Link href="/admin/oportunidades" className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-lg bg-[#161D26] border border-[#C9A84C]/20 text-[#C9A84C] hover:bg-[#C9A84C]/10 transition-colors">
               <TrendingUp size={15} /> Oportunidades
+            </Link>
+            <Link href="/admin/contratos" className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-lg bg-[#161D26] border border-[#1FA67A]/25 text-[#1FA67A] hover:bg-[#1FA67A]/10 transition-colors">
+              <FileText size={15} /> Contratos
             </Link>
             <Link href="/admin/mensajes" className="relative flex items-center gap-2 px-4 py-2.5 text-sm rounded-lg bg-[#161D26] border border-white/5 text-[#8B96A5] hover:text-white transition-colors">
               <MessageSquare size={15} /> Mensajes

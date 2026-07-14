@@ -1,0 +1,153 @@
+{
+  "name": "GROUP 360 — Envío de Contratos",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "contrato-360",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-in",
+      "name": "Webhook: Contrato",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-560, 300],
+      "webhookId": "contrato-360"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "tipo_contrato", "value": "={{ $json.body.tipo_contrato }}", "type": "string" },
+            { "id": "a2", "name": "email_destinatario", "value": "={{ $json.body.email_destinatario }}", "type": "string" },
+            { "id": "a3", "name": "nombre_destinatario", "value": "={{ $json.body.nombre_destinatario }}", "type": "string" },
+            { "id": "a4", "name": "contrato_id", "value": "={{ $json.body.contrato_id }}", "type": "string" },
+            { "id": "a5", "name": "datos_contrato", "value": "={{ $json.body.datos_contrato }}", "type": "object" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-vars",
+      "name": "Preparar datos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-340, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://group360iniciativas.com/api/admin/generate-contract",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.CONTRACTS_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tipo_contrato: $json.tipo_contrato, datos_contrato: $json.datos_contrato, contrato_id: $json.contrato_id }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "id": "gen-pdf",
+      "name": "Generar PDF (Vercel)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-120, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "info@group360iniciativas.com",
+        "toEmail": "={{ $('Preparar datos').item.json.email_destinatario }}",
+        "subject": "=Su contrato — GROUP 360 INICIATIVAS ({{ $('Preparar datos').item.json.tipo_contrato }})",
+        "emailFormat": "html",
+        "html": "=<div style=\"font-family:Arial,sans-serif;color:#0A0A0A\"><p>Estimado/a {{ $('Preparar datos').item.json.nombre_destinatario }},</p><p>Adjunto encontrará el contrato solicitado en formato PDF.</p><p>Quedamos a su disposición para cualquier aclaración.</p><p style=\"color:#1FA67A;font-weight:bold\">GROUP 360 INICIATIVAS</p><p style=\"font-size:12px;color:#666\">info@group360iniciativas.com · group360iniciativas.com</p></div>",
+        "options": {
+          "attachments": "data"
+        }
+      },
+      "id": "send-email",
+      "name": "Enviar Email (SMTP Hostalia)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [120, 300],
+      "credentials": {
+        "smtp": {
+          "id": "REEMPLAZAR_ID_CREDENCIAL_SMTP",
+          "name": "SMTP Hostalia group360"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://ersxtjcuctujcrgahsir.supabase.co/rest/v1/contratos?id=eq.{{ $('Preparar datos').item.json.contrato_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ estado: 'enviado' }) }}",
+        "options": {}
+      },
+      "id": "update-supabase",
+      "name": "Actualizar Supabase → enviado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [360, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: $env.TELEGRAM_CHAT_ID, parse_mode: 'HTML', text: '📄 <b>Contrato enviado</b>\\n\\n📑 Tipo: ' + $('Preparar datos').item.json.tipo_contrato + '\\n👤 ' + $('Preparar datos').item.json.nombre_destinatario + '\\n📧 ' + $('Preparar datos').item.json.email_destinatario + '\\n🆔 ' + $('Preparar datos').item.json.contrato_id }) }}",
+        "options": {}
+      },
+      "id": "notify-telegram",
+      "name": "Notificar Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, contrato_id: $('Preparar datos').item.json.contrato_id }) }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Responder Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [840, 300]
+    }
+  ],
+  "connections": {
+    "Webhook: Contrato": { "main": [[{ "node": "Preparar datos", "type": "main", "index": 0 }]] },
+    "Preparar datos": { "main": [[{ "node": "Generar PDF (Vercel)", "type": "main", "index": 0 }]] },
+    "Generar PDF (Vercel)": { "main": [[{ "node": "Enviar Email (SMTP Hostalia)", "type": "main", "index": 0 }]] },
+    "Enviar Email (SMTP Hostalia)": { "main": [[{ "node": "Actualizar Supabase → enviado", "type": "main", "index": 0 }]] },
+    "Actualizar Supabase → enviado": { "main": [[{ "node": "Notificar Telegram", "type": "main", "index": 0 }]] },
+    "Notificar Telegram": { "main": [[{ "node": "Responder Webhook", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false,
+  "pinData": {},
+  "meta": { "instanceId": "group360-contratos" }
+}
