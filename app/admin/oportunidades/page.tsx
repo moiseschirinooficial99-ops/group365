@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, ArrowLeft, Loader2, X, Pencil, Eye, EyeOff, CheckCircle } from 'lucide-react'
+import { Plus, ArrowLeft, Loader2, X, Pencil, Eye, EyeOff, CheckCircle, Sparkles, Upload, Trash2, ImageIcon } from 'lucide-react'
 
 type Category = 'npl' | 'reo' | 'cesion_remate' | 'producto_ocupado' | 'fondo'
 
@@ -35,6 +35,15 @@ const EMPTY_FORM = {
   estimated_timeline: '',
   status: 'disponible',
   is_public: true,
+  images: [] as string[],
+}
+
+async function uploadFile(file: File): Promise<string | null> {
+  const fd = new FormData()
+  fd.append('file', file)
+  const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd })
+  const { url } = await res.json().catch(() => ({ url: null }))
+  return url || null
 }
 
 function OpForm({
@@ -65,10 +74,72 @@ function OpForm({
     estimated_timeline: initial.estimated_timeline || '',
     status: initial.status || 'disponible',
     is_public: initial.is_public ?? true,
-  } : { ...EMPTY_FORM })
+    images: Array.isArray(initial.images) ? initial.images : [],
+  } : { ...EMPTY_FORM, images: [] })
+
+  const [uploading, setUploading] = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [aiNote, setAiNote] = useState<string | null>(null)
 
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }))
   const num = (v: string) => v ? Number(v) : null
+
+  // Subida manual de fotos
+  const handlePhotos = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    setUploading(true)
+    const urls: string[] = []
+    for (const file of Array.from(files)) {
+      const url = await uploadFile(file)
+      if (url) urls.push(url)
+    }
+    setForm(f => ({ ...f, images: [...f.images, ...urls] }))
+    setUploading(false)
+  }
+
+  const removeImage = (url: string) =>
+    setForm(f => ({ ...f, images: f.images.filter((i: string) => i !== url) }))
+
+  // Analizar flyer con IA: sube la imagen y prellena el formulario
+  const handleAnalyze = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    setAnalyzing(true)
+    setAiNote(null)
+    try {
+      const url = await uploadFile(files[0])
+      if (!url) { setAiNote('No se pudo subir la imagen.'); return }
+      const res = await fetch('/api/admin/analyze-opportunity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: url }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.fields) {
+        setForm(f => ({ ...f, images: [...f.images, url] }))
+        setAiNote(data.error ? `La IA no pudo leer el flyer (${data.error}). La imagen se subió igual — rellena los campos a mano.` : 'La IA no devolvió datos. La imagen se subió igual.')
+        return
+      }
+      const x = data.fields
+      const s = (v: any) => (v === null || v === undefined ? '' : String(v))
+      setForm(f => ({
+        ...f,
+        title: x.title || f.title,
+        location: x.location || f.location,
+        description: x.description || f.description,
+        offer_price: s(x.offer_price) || f.offer_price,
+        property_value: s(x.property_value) || f.property_value,
+        debt_value: s(x.debt_value) || f.debt_value,
+        roi_estimated: s(x.roi_estimated) || f.roi_estimated,
+        estimated_timeline: x.estimated_timeline || f.estimated_timeline,
+        images: [...f.images, url],
+      }))
+      setAiNote('✓ Flyer analizado. Revisa los campos y corrige lo que haga falta antes de publicar.')
+    } catch (e: any) {
+      setAiNote('Error analizando el flyer: ' + e.message)
+    } finally {
+      setAnalyzing(false)
+    }
+  }
 
   const handleSubmit = () => {
     if (!form.title.trim()) return
@@ -80,6 +151,7 @@ function OpForm({
       status: form.status,
       is_public: form.is_public,
       estimated_timeline: form.estimated_timeline.trim() || null,
+      images: form.images,
     }
     if (category !== 'fondo') {
       payload.debt_value = num(form.debt_value)
@@ -112,6 +184,27 @@ function OpForm({
           {initial ? 'Editar oportunidad' : 'Nueva oportunidad'} — {CATEGORIES.find(c => c.id === category)?.label}
         </h3>
         <button onClick={onCancel}><X size={16} className="text-[#8B96A5]" /></button>
+      </div>
+
+      {/* Analizar flyer con IA */}
+      <div className="mb-5 rounded-xl border border-[#C9A84C]/25 bg-[#C9A84C]/5 p-4">
+        <div className="flex items-center gap-2 mb-1.5">
+          <Sparkles size={15} className="text-[#C9A84C]" />
+          <span className="text-sm font-semibold text-[#C9A84C]">Rellenar automáticamente con IA</span>
+        </div>
+        <p className="text-xs text-[#8B96A5] mb-3">
+          Sube el flyer, foto o ficha de la oportunidad y la IA rellena los campos sola. Tú revisas antes de publicar.
+        </p>
+        <label className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
+          analyzing ? 'bg-[#C9A84C]/20 text-[#C9A84C] cursor-wait' : 'bg-[#C9A84C] text-[#0F1419] hover:opacity-90'
+        }`}>
+          {analyzing
+            ? <><Loader2 size={15} className="animate-spin" /> Analizando flyer...</>
+            : <><Sparkles size={15} /> Pegar flyer / foto y analizar</>}
+          <input type="file" accept="image/*" className="hidden" disabled={analyzing}
+            onChange={e => { handleAnalyze(e.target.files); e.currentTarget.value = '' }} />
+        </label>
+        {aiNote && <p className="text-xs mt-2.5 text-[#8B96A5]">{aiNote}</p>}
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -177,6 +270,36 @@ function OpForm({
         <div className="md:col-span-2">
           <label className="text-xs text-[#8B96A5] block mb-1.5">Descripción</label>
           <textarea className="input resize-none h-20" value={form.description} onChange={e => set('description', e.target.value)} />
+        </div>
+
+        {/* Fotos / flyer */}
+        <div className="md:col-span-2">
+          <label className="text-xs text-[#8B96A5] block mb-1.5 flex items-center gap-1.5">
+            <ImageIcon size={13} /> Fotos y flyer de la oportunidad
+          </label>
+          <div className="flex flex-wrap gap-3">
+            {form.images.map((url: string) => (
+              <div key={url} className="relative w-24 h-24 rounded-lg overflow-hidden border border-white/10 group">
+                <img src={url} alt="foto" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removeImage(url)}
+                  className="absolute top-1 right-1 bg-black/60 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Trash2 size={12} className="text-red-400" />
+                </button>
+              </div>
+            ))}
+            <label className={`w-24 h-24 rounded-lg border border-dashed border-white/20 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-[#C9A84C]/50 transition-colors ${uploading ? 'opacity-60 cursor-wait' : ''}`}>
+              {uploading
+                ? <Loader2 size={16} className="animate-spin text-[#8B96A5]" />
+                : <Upload size={16} className="text-[#8B96A5]" />}
+              <span className="text-[10px] text-[#8B96A5]">{uploading ? 'Subiendo...' : 'Añadir fotos'}</span>
+              <input type="file" accept="image/*" multiple className="hidden" disabled={uploading}
+                onChange={e => { handlePhotos(e.target.files); e.currentTarget.value = '' }} />
+            </label>
+          </div>
+          <p className="text-[10px] text-[#8B96A5] mt-1.5">La primera imagen se usa como portada en el portal.</p>
         </div>
 
         <div>

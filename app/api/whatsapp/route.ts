@@ -443,6 +443,51 @@ async function sendWA(to: string, body: string): Promise<{ ok: boolean; error?: 
   }
 }
 
+// ─────────────────────────────────────────────
+// Suscripción de inversores a avisos de oportunidades
+// ─────────────────────────────────────────────
+const INVESTOR_PORTAL = 'https://www.group360iniciativas.com/inversores'
+
+function digitsOnly(s: string): string {
+  return (s || '').replace(/\D/g, '')
+}
+
+async function isRegisteredInvestor(from: string): Promise<{ registered: boolean; name?: string }> {
+  const target = digitsOnly(from)
+  try {
+    const { data } = await supabaseAdmin
+      .from('investors_private')
+      .select('profiles(phone, name)')
+      .eq('is_verified', true)
+    for (const inv of data || []) {
+      const p: any = Array.isArray(inv.profiles) ? inv.profiles[0] : inv.profiles
+      const ph = digitsOnly(p?.phone || '')
+      if (ph && (ph === target || ph.endsWith(target.slice(-9)) || target.endsWith(ph.slice(-9)))) {
+        return { registered: true, name: p?.name }
+      }
+    }
+  } catch {}
+  return { registered: false }
+}
+
+async function handleInvestorSubscription(from: string): Promise<string> {
+  const { registered, name } = await isRegisteredInvestor(from)
+
+  // Alta / reactivación en la lista de avisos
+  const row: any = { phone: from, is_active: true, source: registered ? 'registered' : 'whatsapp' }
+  if (name) row.name = name
+  await supabaseAdmin.from('investor_subscribers').upsert(row, { onConflict: 'phone' }).catch(() => {})
+
+  if (registered) {
+    return `Perfecto${name ? ' ' + name : ''} ✅ Ya te tengo registrado como inversor y en la lista de avisos.\n\n`
+      + `Te avisaré por aquí de cada nueva oportunidad en cuanto se publique.\n`
+      + `También puedes consultarlas en tu panel privado 👉 ${INVESTOR_PORTAL}/dashboard`
+  }
+  return `¡Hecho! 🔔 Te apunto para avisarte por WhatsApp de cada nueva oportunidad de inversión.\n\n`
+    + `Para acceder al panel privado con todos los detalles y documentación, regístrate aquí 👉 ${INVESTOR_PORTAL}/register\n\n`
+    + `Cuando termines, escríbeme "ya estoy registrado" y te confirmo en la lista. 🤝`
+}
+
 export async function GET(req: NextRequest) {
   const sp = new URL(req.url).searchParams
   const mode = sp.get('hub.mode')
@@ -495,6 +540,25 @@ export async function POST(req: NextRequest) {
       await sendTelegramNotification(
         `🆕 <b>NUEVO CONTACTO WhatsApp</b>\n\n📱 ${from}\n💬 "${text.slice(0, 200)}"\n\n🔗 Ver: https://www.group360iniciativas.com/admin/mensajes`
       )
+    }
+
+    // ── Suscripción de inversor a avisos de oportunidades ──
+    const t = text.toLowerCase()
+    const mentionsNotify = /av[ií]s|notific/.test(t)
+    const mentionsInvestOpp = /inversor|oportunidad|invertir/.test(t)
+    const registeredBack = /ya (estoy|me he) registrad|ya me registr/.test(t)
+    const wantsInvestorNotify = registeredBack || (mentionsNotify && mentionsInvestOpp)
+
+    if (wantsInvestorNotify) {
+      const subReply = await handleInvestorSubscription(from)
+      await sendWA(from, subReply)
+      await supabaseAdmin.from('wa_conversations').insert({
+        phone: from, message: subReply, direction: 'outbound',
+      }).catch(() => {})
+      await sendTelegramNotification(
+        `💼 <b>Inversor en lista de avisos</b>\n\n📱 ${from}\n💬 "${text.slice(0, 160)}"`
+      )
+      return NextResponse.json({ ok: true })
     }
 
     // Historial

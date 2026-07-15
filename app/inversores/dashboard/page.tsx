@@ -375,8 +375,11 @@ export default function Dashboard() {
                                 const roi = op.roi_estimated || op.annual_return_pct
                                 const price = op.offer_price || op.minimum_investment
                                 const sent = invInterestSent.has(op.id)
+                                const cover = Array.isArray(op.images) && op.images.length > 0 ? op.images[0] : null
                                 return (
-                                  <div key={op.id} className="bg-[#0F1419] border border-white/10 rounded-xl p-4">
+                                  <div key={op.id} className="bg-[#0F1419] border border-white/10 rounded-xl overflow-hidden">
+                                    {cover && <img src={cover} alt={op.title} className="w-full h-32 object-cover" />}
+                                    <div className="p-4">
                                     <div className="flex items-start justify-between gap-2 mb-2">
                                       <p className="text-white text-sm font-semibold line-clamp-2">{op.title}</p>
                                       {!op.is_public && (
@@ -402,6 +405,7 @@ export default function Dashboard() {
                                     >
                                       {sent ? '✓ Solicitud enviada' : sendingInvInterest === op.id ? 'Enviando...' : 'Me interesa'}
                                     </button>
+                                    </div>
                                   </div>
                                 )
                               })}

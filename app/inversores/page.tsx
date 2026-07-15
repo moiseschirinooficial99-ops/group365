@@ -124,14 +124,20 @@ const VERTICALS: {
 function OpportunityBadge({ op, category }: { op: any; category: VerticalId }) {
   const roi = op.roi_estimated || op.annual_return_pct
   const price = op.offer_price || op.minimum_investment
+  const cover = Array.isArray(op.images) && op.images.length > 0 ? op.images[0] : null
   return (
-    <div className="bg-[#0F1419] border border-white/10 rounded-lg p-3">
-      <p className="text-white text-xs font-semibold truncate mb-1">{op.title}</p>
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[#8B96A5] text-[10px] truncate">{op.location || ''}</span>
-        <div className="flex items-center gap-1.5 shrink-0">
-          {roi && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#C9A84C]/15 text-[#C9A84C] border border-[#C9A84C]/20 font-bold">{roi}%</span>}
-          {price && <span className="text-[10px] text-[#8B96A5]">€{Number(price).toLocaleString('es-ES')}</span>}
+    <div className="bg-[#0F1419] border border-white/10 rounded-lg overflow-hidden">
+      {cover && (
+        <img src={cover} alt={op.title} className="w-full h-28 object-cover" />
+      )}
+      <div className="p-3">
+        <p className="text-white text-xs font-semibold truncate mb-1">{op.title}</p>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[#8B96A5] text-[10px] truncate">{op.location || ''}</span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {roi && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#C9A84C]/15 text-[#C9A84C] border border-[#C9A84C]/20 font-bold">{roi}%</span>}
+            {price && <span className="text-[10px] text-[#8B96A5]">€{Number(price).toLocaleString('es-ES')}</span>}
+          </div>
         </div>
       </div>
     </div>
