@@ -86,6 +86,39 @@ export async function notifyCeoWhatsApp(message: string): Promise<void> {
   await sendWhatsAppMessage(CEO_WHATSAPP, htmlToWhatsApp(message))
 }
 
+// Email al CEO vía Resend (opcional). Solo actúa si hay RESEND_API_KEY + CEO_EMAIL.
+export async function sendCeoEmail(subject: string, text: string): Promise<void> {
+  const key = process.env.RESEND_API_KEY
+  const to = process.env.CEO_EMAIL
+  if (!key || !to) return
+  const from = process.env.EMAIL_FROM || 'GROUP 360 <onboarding@resend.dev>'
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from, to, subject, text }),
+  }).catch(() => {})
+}
+
+// Nombre de la plantilla aprobada para avisar al CEO de un prospecto.
+const CEO_LEAD_TEMPLATE = process.env.WHATSAPP_TEMPLATE_LEAD || 'nuevo_prospecto'
+
+// Aviso completo de un prospecto al CEO por los 3 canales: WhatsApp (plantilla,
+// que llega sin ventana de 24h; si aún no está aprobada cae a texto libre),
+// y Email (si está configurado). Telegram lo manda notifyNewLead aparte.
+export async function notifyCeoLead(lead: any): Promise<void> {
+  const name = lead.name || 'Sin nombre'
+  const phone = lead.phone || '-'
+  const source = lead.source || '-'
+  const ok = await sendWhatsAppTemplate(CEO_WHATSAPP, CEO_LEAD_TEMPLATE, 'es', [name, phone, source])
+  if (!ok) {
+    await notifyCeoWhatsApp(`🔔 <b>Nuevo contacto</b>\n\n👤 ${name}\n📱 ${phone}\n📌 ${source}`)
+  }
+  await sendCeoEmail(
+    'Nuevo contacto en GROUP 360',
+    `Nombre: ${name}\nTeléfono: ${phone}\nEmail: ${lead.email || '-'}\nOrigen: ${source}\n\nEntra al panel: https://www.group360iniciativas.com/admin`
+  )
+}
+
 // El CEO solo debe recibir avisos de PROSPECTOS reales: posibles compradores,
 // vendedores, inversores o cualquiera que pida una llamada o reunión.
 // Se excluye el ruido (altas de newsletter, acciones internas del bot, etc.).
@@ -102,7 +135,8 @@ export async function notifyNewLead(lead: any): Promise<void> {
   const msg = `🔔 <b>Nuevo contacto</b>\n\n👤 ${lead.name || 'Sin nombre'}\n📧 ${lead.email || '-'}\n📱 ${lead.phone || '-'}\n💰 €${lead.budget_max || '-'}\n📍 ${lead.preferred_zone || '-'}\n📌 ${lead.source}`
   await sendTelegramNotification(msg)
   // Solo al CEO si es un prospecto real (comprador/vendedor/inversor/quiere contacto).
-  if (isProspectLead(lead)) await notifyCeoWhatsApp(msg)
+  // WhatsApp por plantilla (llega sin ventana de 24h) + Email.
+  if (isProspectLead(lead)) await notifyCeoLead(lead)
 }
 
 export async function notifyHotLead(lead: any): Promise<void> {
