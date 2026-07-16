@@ -49,8 +49,20 @@ export async function notifyNewOpportunity(opportunity: any): Promise<void> {
     return true
   }
 
-  // 1) Inversores registrados en la web (tabla profiles: nombre + teléfono).
-  //    Aquí es donde el registro de /inversores/register guarda a la gente.
+  // 1) Inversores desde la tabla LEADS: aquí es donde el registro
+  //    (/inversores/register) y los "me interesa" guardan el teléfono real.
+  //    (En profiles el teléfono suele quedar vacío por RLS, así que no sirve.)
+  const { data: invLeads } = await supabaseAdmin
+    .from('leads')
+    .select('phone, source')
+    .not('phone', 'is', null)
+    .or('source.ilike.%inversor%,source.eq.npl_investor,source.eq.dashboard_mensaje')
+
+  for (const l of invLeads || []) {
+    await pushTo(l.phone)
+  }
+
+  // 1b) Por si en el futuro profiles llega a tener teléfono, también lo incluimos.
   const { data: profiles } = await supabaseAdmin
     .from('profiles')
     .select('id, phone')
