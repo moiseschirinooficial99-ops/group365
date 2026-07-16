@@ -2,8 +2,9 @@
 import { useEffect, useState, useMemo } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MapPin, Bed, Bath, Maximize2, Calculator, MessageSquare, LogOut, TrendingUp, Clock, User, Home, FileText, ChevronDown } from 'lucide-react'
+import { MapPin, Bed, Bath, Maximize2, Calculator, MessageSquare, LogOut, TrendingUp, Clock, User, Home, FileText, ChevronDown, Image as ImageIco } from 'lucide-react'
 import Header from '@/components/layout/Header'
+import OpportunityModal from '@/components/OpportunityModal'
 
 type Tab = 'propiedades' | 'consultas' | 'calculadora' | 'contacto'
 
@@ -72,12 +73,13 @@ export default function Dashboard() {
   const [msgLoading, setMsgLoading] = useState(false)
 
   // 5 verticales
-  type InvCat = 'npl' | 'reo' | 'cesion_remate' | 'producto_ocupado' | 'fondo'
-  const [invOpps, setInvOpps] = useState<Record<InvCat, any[]>>({ npl: [], reo: [], cesion_remate: [], producto_ocupado: [], fondo: [] })
+  type InvCat = 'npl' | 'reo' | 'cesion_remate' | 'producto_ocupado' | 'propiedades_inversion' | 'fondo'
+  const [invOpps, setInvOpps] = useState<Record<InvCat, any[]>>({ npl: [], reo: [], cesion_remate: [], producto_ocupado: [], propiedades_inversion: [], fondo: [] })
   const [invLoaded, setInvLoaded] = useState(false)
   const [expandedCat, setExpandedCat] = useState<InvCat | null>(null)
   const [invInterestSent, setInvInterestSent] = useState<Set<string>>(new Set())
   const [sendingInvInterest, setSendingInvInterest] = useState<string | null>(null)
+  const [detailOp, setDetailOp] = useState<any | null>(null)
 
   useEffect(() => {
     ;(async () => {
@@ -102,7 +104,7 @@ export default function Dashboard() {
         .then(r => r.json())
         .then((data: any[]) => {
           if (!Array.isArray(data)) return
-          const grouped: Record<string, any[]> = { npl: [], reo: [], cesion_remate: [], producto_ocupado: [], fondo: [] }
+          const grouped: Record<string, any[]> = { npl: [], reo: [], cesion_remate: [], producto_ocupado: [], propiedades_inversion: [], fondo: [] }
           for (const op of data) {
             if (grouped[op.category]) grouped[op.category].push(op)
           }
@@ -216,6 +218,7 @@ export default function Dashboard() {
     { id: 'reo',             icon: '🏦', label: 'REO',               accentColor: 'text-[#1B7F6F]', borderColor: 'border-[#1B7F6F]/25' },
     { id: 'cesion_remate',   icon: '⚖️', label: 'Cesión de Remate',  accentColor: 'text-blue-400',  borderColor: 'border-blue-400/25' },
     { id: 'producto_ocupado',icon: '🔑', label: 'Producto Ocupado',  accentColor: 'text-orange-400', borderColor: 'border-orange-400/25' },
+    { id: 'propiedades_inversion', icon: '🏘️', label: 'Propiedades de Inversión', accentColor: 'text-emerald-400', borderColor: 'border-emerald-400/25' },
     { id: 'fondo',           icon: '💼', label: 'Fondo GROUP 360',   accentColor: 'text-purple-400', borderColor: 'border-purple-400/25' },
   ]
 
@@ -320,12 +323,12 @@ export default function Dashboard() {
             <span className="text-xs text-[#8B96A5]">Oportunidades disponibles para ti</span>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-3">
             {INV_VERTICALS.map(v => {
               const ops: any[] = invOpps[v.id as keyof typeof invOpps] || []
               const isOpen = expandedCat === v.id
               return (
-                <div key={v.id} className={`${isOpen ? 'sm:col-span-2 lg:col-span-5' : ''}`}>
+                <div key={v.id} className={`${isOpen ? 'sm:col-span-2 lg:col-span-6' : ''}`}>
                   {/* Tab card */}
                   <button
                     onClick={() => setExpandedCat(isOpen ? null : v.id as any)}
@@ -378,7 +381,16 @@ export default function Dashboard() {
                                 const cover = Array.isArray(op.images) && op.images.length > 0 ? op.images[0] : null
                                 return (
                                   <div key={op.id} className="bg-[#0F1419] border border-white/10 rounded-xl overflow-hidden">
-                                    {cover && <img src={cover} alt={op.title} className="w-full h-32 object-cover" />}
+                                    {cover && (
+                                      <button onClick={() => setDetailOp(op)} className="relative block w-full">
+                                        <img src={cover} alt={op.title} className="w-full h-32 object-cover" />
+                                        {Array.isArray(op.images) && op.images.length > 1 && (
+                                          <span className="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-full">
+                                            {op.images.length} 📷
+                                          </span>
+                                        )}
+                                      </button>
+                                    )}
                                     <div className="p-4">
                                     <div className="flex items-start justify-between gap-2 mb-2">
                                       <p className="text-white text-sm font-semibold line-clamp-2">{op.title}</p>
@@ -394,17 +406,25 @@ export default function Dashboard() {
                                       {price && <span className="text-[10px] px-2 py-0.5 rounded-full border border-white/10 text-[#8B96A5]">€{Number(price).toLocaleString('es-ES')}</span>}
                                       {op.estimated_timeline && <span className="text-[10px] text-[#8B96A5]">{op.estimated_timeline}</span>}
                                     </div>
-                                    <button
-                                      onClick={() => handleInvInterest(op.id, op.title, v.id)}
-                                      disabled={sent || sendingInvInterest === op.id}
-                                      className={`w-full py-2 rounded-lg text-xs font-medium transition-all ${
-                                        sent
-                                          ? 'bg-[#1B7F6F]/10 border border-[#1B7F6F]/25 text-[#1B7F6F] cursor-default'
-                                          : 'btn-primary'
-                                      }`}
-                                    >
-                                      {sent ? '✓ Solicitud enviada' : sendingInvInterest === op.id ? 'Enviando...' : 'Me interesa'}
-                                    </button>
+                                    <div className="flex gap-2">
+                                      <button
+                                        onClick={() => setDetailOp(op)}
+                                        className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-xs font-medium border border-white/10 text-[#8B96A5] hover:text-white hover:border-white/25 transition-all shrink-0"
+                                      >
+                                        <ImageIco size={13} /> Ver ficha
+                                      </button>
+                                      <button
+                                        onClick={() => handleInvInterest(op.id, op.title, v.id)}
+                                        disabled={sent || sendingInvInterest === op.id}
+                                        className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
+                                          sent
+                                            ? 'bg-[#1B7F6F]/10 border border-[#1B7F6F]/25 text-[#1B7F6F] cursor-default'
+                                            : 'btn-primary'
+                                        }`}
+                                      >
+                                        {sent ? '✓ Solicitud enviada' : sendingInvInterest === op.id ? 'Enviando...' : 'Me interesa'}
+                                      </button>
+                                    </div>
                                     </div>
                                   </div>
                                 )
@@ -765,6 +785,7 @@ export default function Dashboard() {
         )}
 
       </div>
+      <OpportunityModal opportunity={detailOp} onClose={() => setDetailOp(null)} />
     </main>
   )
 }

@@ -1,6 +1,29 @@
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID
 
+// Número del CEO / encargado para avisos directos por WhatsApp.
+// Configurable con la variable CEO_WHATSAPP; por defecto el número de dirección.
+export const CEO_WHATSAPP = process.env.CEO_WHATSAPP || '34677780774'
+
+// Normaliza un teléfono al formato que exige la API de WhatsApp: solo dígitos,
+// con prefijo de país. Los números españoles de 9 cifras reciben el 34 delante.
+export function normalizePhone(raw?: string | null): string | null {
+  if (!raw) return null
+  let p = String(raw).replace(/\D/g, '')
+  if (!p) return null
+  if (p.startsWith('00')) p = p.slice(2)
+  if (p.length === 9) p = '34' + p
+  return p
+}
+
+// Convierte el formato HTML de Telegram (<b>, <br>) al texto plano/negrita de WhatsApp.
+export function htmlToWhatsApp(msg: string): string {
+  return msg
+    .replace(/<\/?b>/gi, '*')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+}
+
 export async function sendTelegramNotification(message: string): Promise<void> {
   if (!BOT_TOKEN || !CHAT_ID) return
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -14,20 +37,76 @@ export async function sendWhatsAppMessage(phone: string, message: string): Promi
   const token = process.env.WHATSAPP_TOKEN
   const phoneId = process.env.WHATSAPP_PHONE_ID
   if (!token || !phoneId) return
+  const to = normalizePhone(phone)
+  if (!to) return
   await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messaging_product: 'whatsapp', to: phone, type: 'text', text: { body: message } }),
+    body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body: message } }),
   }).catch(() => {})
 }
 
+// Envío por PLANTILLA aprobada. A diferencia del texto libre, la plantilla se
+// entrega aunque el destinatario lleve días sin escribir (fuera de la ventana
+// de 24h de Meta). Devuelve true si Meta aceptó el envío.
+export async function sendWhatsAppTemplate(
+  phone: string,
+  templateName: string,
+  lang = 'es',
+  bodyParams: string[] = []
+): Promise<boolean> {
+  const token = process.env.WHATSAPP_TOKEN
+  const phoneId = process.env.WHATSAPP_PHONE_ID
+  if (!token || !phoneId) return false
+  const to = normalizePhone(phone)
+  if (!to) return false
+  const components = bodyParams.length
+    ? [{ type: 'body', parameters: bodyParams.map(t => ({ type: 'text', text: t })) }]
+    : []
+  try {
+    const res = await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to,
+        type: 'template',
+        template: { name: templateName, language: { code: lang }, components },
+      }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+// Aviso directo al CEO/encargado por WhatsApp. Acepta mensaje en HTML (Telegram)
+// y lo convierte al formato de WhatsApp automáticamente.
+export async function notifyCeoWhatsApp(message: string): Promise<void> {
+  await sendWhatsAppMessage(CEO_WHATSAPP, htmlToWhatsApp(message))
+}
+
+// El CEO solo debe recibir avisos de PROSPECTOS reales: posibles compradores,
+// vendedores, inversores o cualquiera que pida una llamada o reunión.
+// Se excluye el ruido (altas de newsletter, acciones internas del bot, etc.).
+const CEO_SKIP_SOURCES = new Set(['footer', 'telegram'])
+export function isProspectLead(lead: any): boolean {
+  const source = String(lead?.source || '').toLowerCase()
+  const type = String(lead?.type || '').toLowerCase()
+  if (type === 'newsletter') return false
+  if (CEO_SKIP_SOURCES.has(source)) return false
+  return true
+}
+
 export async function notifyNewLead(lead: any): Promise<void> {
-  await sendTelegramNotification(
-    `🔔 <b>Nuevo lead</b>\n\n👤 ${lead.name || 'Sin nombre'}\n📧 ${lead.email || '-'}\n📱 ${lead.phone || '-'}\n💰 €${lead.budget_max || '-'}\n📍 ${lead.preferred_zone || '-'}\n📌 ${lead.source}`
-  )
+  const msg = `🔔 <b>Nuevo contacto</b>\n\n👤 ${lead.name || 'Sin nombre'}\n📧 ${lead.email || '-'}\n📱 ${lead.phone || '-'}\n💰 €${lead.budget_max || '-'}\n📍 ${lead.preferred_zone || '-'}\n📌 ${lead.source}`
+  await sendTelegramNotification(msg)
+  // Solo al CEO si es un prospecto real (comprador/vendedor/inversor/quiere contacto).
+  if (isProspectLead(lead)) await notifyCeoWhatsApp(msg)
 }
 
 export async function notifyHotLead(lead: any): Promise<void> {
+  // Un lead caliente es siempre prospecto; el CEO ya lo recibe vía notifyNewLead.
   await sendTelegramNotification(
     `🔥 <b>LEAD CALIENTE</b>\n\n👤 ${lead.name || 'Sin nombre'}\n📧 ${lead.email || '-'}\n📱 ${lead.phone || '-'}\n💰 €${lead.budget_max || '-'}\n📊 Score: ${lead.scoring_result || 0}%\n📌 ${lead.source}`
   )

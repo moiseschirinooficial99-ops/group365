@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
+import OpportunityModal from '@/components/OpportunityModal'
 
 const FADE_UP = {
   hidden: { opacity: 0, y: 24 },
@@ -14,7 +15,7 @@ const STAGGER = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } }
 
 const WA_BASE = 'https://wa.me/34611251818?text=Hola,%20me%20interesa%20una%20oportunidad%20de%20'
 
-type VerticalId = 'npl' | 'reo' | 'cesion_remate' | 'producto_ocupado' | 'fondo'
+type VerticalId = 'npl' | 'reo' | 'cesion_remate' | 'producto_ocupado' | 'propiedades_inversion' | 'fondo'
 
 const VERTICALS: {
   id: VerticalId
@@ -102,6 +103,24 @@ const VERTICALS: {
     waText: 'Producto%20Ocupado',
   },
   {
+    id: 'propiedades_inversion',
+    icon: '🏘️',
+    name: 'Propiedades de Inversión',
+    tagline: 'Inmuebles con recorrido de revalorización',
+    description: 'Inmuebles seleccionados por su oportunidad de entrada por debajo de mercado y su potencial de revalorización. Más orientadas a la oportunidad patrimonial que a la renta inmediata.',
+    features: [
+      'Precio de entrada por debajo de mercado',
+      'Potencial de revalorización a medio plazo',
+      'Due diligence y documentación completa',
+      'Acompañamiento en compra y gestión',
+    ],
+    roi: 'Según activo',
+    plazo: 'Medio-largo plazo',
+    accentColor: 'text-emerald-400',
+    borderColor: 'border-emerald-400/30',
+    waText: 'Propiedades%20de%20Inversion',
+  },
+  {
     id: 'fondo',
     icon: '💼',
     name: 'Fondo GROUP 360',
@@ -121,14 +140,24 @@ const VERTICALS: {
   },
 ]
 
-function OpportunityBadge({ op, category }: { op: any; category: VerticalId }) {
+function OpportunityBadge({ op, onOpen }: { op: any; onOpen: (op: any) => void }) {
   const roi = op.roi_estimated || op.annual_return_pct
   const price = op.offer_price || op.minimum_investment
   const cover = Array.isArray(op.images) && op.images.length > 0 ? op.images[0] : null
   return (
-    <div className="bg-[#0F1419] border border-white/10 rounded-lg overflow-hidden">
+    <button
+      onClick={() => onOpen(op)}
+      className="w-full text-left bg-[#0F1419] border border-white/10 rounded-lg overflow-hidden hover:border-white/25 transition-colors"
+    >
       {cover && (
-        <img src={cover} alt={op.title} className="w-full h-28 object-cover" />
+        <div className="relative">
+          <img src={cover} alt={op.title} className="w-full h-28 object-cover" />
+          {Array.isArray(op.images) && op.images.length > 1 && (
+            <span className="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-full">
+              {op.images.length} 📷
+            </span>
+          )}
+        </div>
       )}
       <div className="p-3">
         <p className="text-white text-xs font-semibold truncate mb-1">{op.title}</p>
@@ -139,8 +168,9 @@ function OpportunityBadge({ op, category }: { op: any; category: VerticalId }) {
             {price && <span className="text-[10px] text-[#8B96A5]">€{Number(price).toLocaleString('es-ES')}</span>}
           </div>
         </div>
+        <span className="text-[#C9A84C] text-[10px] mt-1.5 inline-block">Ver ficha y fotos →</span>
       </div>
-    </div>
+    </button>
   )
 }
 
@@ -148,9 +178,10 @@ export default function InversoresPage() {
   const supabase = createClientComponentClient()
   const [expanded, setExpanded] = useState<VerticalId | null>(null)
   const [opportunities, setOpportunities] = useState<Record<VerticalId, any[]>>({
-    npl: [], reo: [], cesion_remate: [], producto_ocupado: [], fondo: [],
+    npl: [], reo: [], cesion_remate: [], producto_ocupado: [], propiedades_inversion: [], fondo: [],
   })
   const [opsLoaded, setOpsLoaded] = useState(false)
+  const [detailOp, setDetailOp] = useState<any | null>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -163,7 +194,7 @@ export default function InversoresPage() {
       .then(r => r.json())
       .then((data: any[]) => {
         if (!Array.isArray(data)) return
-        const grouped: Record<VerticalId, any[]> = { npl: [], reo: [], cesion_remate: [], producto_ocupado: [], fondo: [] }
+        const grouped: Record<VerticalId, any[]> = { npl: [], reo: [], cesion_remate: [], producto_ocupado: [], propiedades_inversion: [], fondo: [] }
         for (const op of data) {
           if (grouped[op.category as VerticalId]) grouped[op.category as VerticalId].push(op)
         }
@@ -218,7 +249,7 @@ export default function InversoresPage() {
           </motion.div>
 
           {/* Grid de tarjetas */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
             {VERTICALS.map((v, i) => {
               const isOpen = expanded === v.id
               const ops = opportunities[v.id]
@@ -229,7 +260,7 @@ export default function InversoresPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.07 }}
                   viewport={{ once: true }}
-                  className={`lg:col-span-1 ${isOpen ? 'sm:col-span-2 lg:col-span-5' : ''} transition-all duration-300`}
+                  className={`lg:col-span-1 ${isOpen ? 'sm:col-span-2 lg:col-span-6' : ''} transition-all duration-300`}
                 >
                   {/* Card header */}
                   <button
@@ -304,7 +335,7 @@ export default function InversoresPage() {
                                 <p className="text-[#8B96A5] text-xs">Cargando...</p>
                               ) : ops.length > 0 ? (
                                 <div className="space-y-2 mb-4">
-                                  {ops.map(op => <OpportunityBadge key={op.id} op={op} category={v.id} />)}
+                                  {ops.map(op => <OpportunityBadge key={op.id} op={op} onOpen={setDetailOp} />)}
                                 </div>
                               ) : (
                                 <div className="bg-[#0F1419] rounded-xl p-4 mb-4">
@@ -323,6 +354,7 @@ export default function InversoresPage() {
                                   v.id === 'reo' ? 'bg-[#1B7F6F] text-white border-[#1B7F6F]' :
                                   v.id === 'cesion_remate' ? 'bg-blue-500 text-white border-blue-500' :
                                   v.id === 'producto_ocupado' ? 'bg-orange-500 text-white border-orange-500' :
+                                  v.id === 'propiedades_inversion' ? 'bg-emerald-500 text-white border-emerald-500' :
                                   'bg-purple-500 text-white border-purple-500'
                                 }`}
                               >
@@ -364,6 +396,7 @@ export default function InversoresPage() {
       </section>
 
       <Footer />
+      <OpportunityModal opportunity={detailOp} onClose={() => setDetailOp(null)} />
     </main>
   )
 }

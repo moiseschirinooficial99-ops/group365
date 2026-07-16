@@ -2,16 +2,18 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, ArrowLeft, Loader2, X, Pencil, Eye, EyeOff, CheckCircle, Sparkles, Upload, Trash2, ImageIcon } from 'lucide-react'
+import { Plus, ArrowLeft, Loader2, X, Pencil, Eye, EyeOff, CheckCircle, Sparkles, Upload, Trash2, ImageIcon, Image as ImageIco } from 'lucide-react'
+import OpportunityModal from '@/components/OpportunityModal'
 
-type Category = 'npl' | 'reo' | 'cesion_remate' | 'producto_ocupado' | 'fondo'
+type Category = 'npl' | 'reo' | 'cesion_remate' | 'producto_ocupado' | 'propiedades_inversion' | 'fondo'
 
 const CATEGORIES: { id: Category; label: string; icon: string; color: string }[] = [
-  { id: 'npl',             label: 'NPL',               icon: '📋', color: 'text-[#C9A84C]' },
-  { id: 'reo',             label: 'REO',               icon: '🏦', color: 'text-[#1B7F6F]' },
-  { id: 'cesion_remate',   label: 'Cesión de Remate',  icon: '⚖️', color: 'text-blue-400' },
-  { id: 'producto_ocupado',label: 'Producto Ocupado',  icon: '🔑', color: 'text-orange-400' },
-  { id: 'fondo',           label: 'Fondo GROUP 360',   icon: '💼', color: 'text-purple-400' },
+  { id: 'npl',                  label: 'NPL',                     icon: '📋', color: 'text-[#C9A84C]' },
+  { id: 'reo',                  label: 'REO',                     icon: '🏦', color: 'text-[#1B7F6F]' },
+  { id: 'cesion_remate',        label: 'Cesión de Remate',        icon: '⚖️', color: 'text-blue-400' },
+  { id: 'producto_ocupado',     label: 'Producto Ocupado',        icon: '🔑', color: 'text-orange-400' },
+  { id: 'propiedades_inversion',label: 'Propiedades de Inversión',icon: '🏘️', color: 'text-emerald-400' },
+  { id: 'fondo',                label: 'Fondo GROUP 360',         icon: '💼', color: 'text-purple-400' },
 ]
 
 const STATUS_BADGE: Record<string, string> = {
@@ -338,19 +340,20 @@ function OpForm({
 export default function AdminOportunidadesPage() {
   const [activeTab, setActiveTab] = useState<Category>('npl')
   const [opportunities, setOpportunities] = useState<Record<Category, any[]>>({
-    npl: [], reo: [], cesion_remate: [], producto_ocupado: [], fondo: [],
+    npl: [], reo: [], cesion_remate: [], producto_ocupado: [], propiedades_inversion: [], fondo: [],
   })
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [notifyInvestors, setNotifyInvestors] = useState(true)
+  const [detailOp, setDetailOp] = useState<any | null>(null)
 
   const load = async () => {
     setLoading(true)
     const res = await fetch('/api/investment-opportunities').then(r => r.json()).catch(() => [])
     const all: any[] = Array.isArray(res) ? res : []
-    const grouped: Record<Category, any[]> = { npl: [], reo: [], cesion_remate: [], producto_ocupado: [], fondo: [] }
+    const grouped: Record<Category, any[]> = { npl: [], reo: [], cesion_remate: [], producto_ocupado: [], propiedades_inversion: [], fondo: [] }
     for (const op of all) {
       if (grouped[op.category as Category]) grouped[op.category as Category].push(op)
     }
@@ -494,6 +497,20 @@ export default function AdminOportunidadesPage() {
                   animate={{ opacity: 1, y: 0 }}
                   className="card p-5 flex flex-wrap items-start justify-between gap-4"
                 >
+                  {Array.isArray(op.images) && op.images.length > 0 && (
+                    <button
+                      onClick={() => setDetailOp(op)}
+                      className="relative w-20 h-20 rounded-lg overflow-hidden border border-white/10 shrink-0 group"
+                      title="Ver ficha"
+                    >
+                      <img src={op.images[0]} alt={op.title} className="w-full h-full object-cover" />
+                      {op.images.length > 1 && (
+                        <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-full">
+                          {op.images.length} 📷
+                        </span>
+                      )}
+                    </button>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className={`text-[10px] px-2 py-0.5 rounded border font-semibold ${STATUS_BADGE[op.status] || STATUS_BADGE.disponible}`}>
@@ -542,6 +559,12 @@ export default function AdminOportunidadesPage() {
                       {op.status === 'disponible' ? 'Cerrar' : 'Reabrir'}
                     </button>
                     <button
+                      onClick={() => setDetailOp(op)}
+                      className="flex items-center gap-1 text-[10px] px-3 py-1.5 rounded-lg bg-white/5 text-[#8B96A5] border border-white/10 hover:text-white transition-colors"
+                    >
+                      <ImageIco size={10} /> Ver ficha
+                    </button>
+                    <button
                       onClick={() => { setShowForm(false); setEditingId(op.id) }}
                       className="flex items-center gap-1 text-[10px] px-3 py-1.5 rounded-lg bg-[#C9A84C]/15 text-[#C9A84C] border border-[#C9A84C]/30 hover:bg-[#C9A84C]/25 transition-colors"
                     >
@@ -554,6 +577,8 @@ export default function AdminOportunidadesPage() {
           </div>
         )}
       </div>
+
+      <OpportunityModal opportunity={detailOp} onClose={() => setDetailOp(null)} />
     </main>
   )
 }

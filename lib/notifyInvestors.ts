@@ -1,13 +1,17 @@
 import { supabaseAdmin } from '@/lib/supabase'
-import { sendWhatsAppMessage, sendTelegramNotification } from '@/lib/notifications'
+import { sendWhatsAppMessage, sendWhatsAppTemplate, sendTelegramNotification, normalizePhone } from '@/lib/notifications'
 
 const CATEGORY_NAMES: Record<string, string> = {
   npl: 'NPL — Hipoteca Impagada',
   reo: 'REO — Activo Adjudicado',
   cesion_remate: 'Cesión de Remate',
   producto_ocupado: 'Producto Ocupado',
+  propiedades_inversion: 'Propiedades de Inversión',
   fondo: 'Fondo GROUP 360',
 }
+
+// Nombre de la plantilla aprobada en Meta (crear con scripts/create-wa-template.mjs).
+const OPP_TEMPLATE = process.env.WHATSAPP_TEMPLATE_OPPORTUNITY || 'nueva_oportunidad'
 
 const PORTAL_URL = 'https://www.group360iniciativas.com/inversores'
 
@@ -29,31 +33,52 @@ function buildMessage(opportunity: any): string {
 
 export async function notifyNewOpportunity(opportunity: any): Promise<void> {
   const message = buildMessage(opportunity)
+  const catName = CATEGORY_NAMES[opportunity.category] || opportunity.category
   const sentPhones = new Set<string>()
   let sent = 0
 
-  // 1) Inversores verificados registrados en la web
+  const pushTo = async (rawPhone?: string | null) => {
+    const phone = normalizePhone(rawPhone)
+    if (!phone || sentPhones.has(phone)) return false
+    sentPhones.add(phone)
+    // Intenta plantilla (llega aunque lleve días sin escribir). Si no está
+    // aprobada todavía, Meta rechaza y caemos al texto libre (solo dentro de 24h).
+    const ok = await sendWhatsAppTemplate(phone, OPP_TEMPLATE, 'es', [opportunity.title, catName])
+    if (!ok) await sendWhatsAppMessage(phone, message)
+    sent++
+    return true
+  }
+
+  // 1) Inversores registrados en la web (tabla profiles: nombre + teléfono).
+  //    Aquí es donde el registro de /inversores/register guarda a la gente.
+  const { data: profiles } = await supabaseAdmin
+    .from('profiles')
+    .select('id, phone')
+    .not('phone', 'is', null)
+
+  for (const p of profiles || []) {
+    const ok = await pushTo(p.phone)
+    if (ok) {
+      await supabaseAdmin.from('investor_notifications').insert({
+        opportunity_id: opportunity.id,
+        investor_id: p.id,
+        channel: 'whatsapp',
+      }).catch(() => {})
+    }
+  }
+
+  // 2) Inversores verificados (si existe la tabla investors_private). Degrada solo.
   const { data: investors } = await supabaseAdmin
     .from('investors_private')
-    .select('id, profile_id, profiles(phone, name)')
+    .select('id, profiles(phone)')
     .eq('is_verified', true)
 
   for (const investor of investors || []) {
     const profile = Array.isArray(investor.profiles) ? investor.profiles[0] : investor.profiles
-    const phone = profile?.phone
-    if (!phone || sentPhones.has(phone)) continue
-    sentPhones.add(phone)
-
-    await sendWhatsAppMessage(phone, message)
-    await supabaseAdmin.from('investor_notifications').insert({
-      opportunity_id: opportunity.id,
-      investor_id: investor.id,
-      channel: 'whatsapp',
-    }).catch(() => {})
-    sent++
+    await pushTo(profile?.phone)
   }
 
-  // 2) Suscriptores por WhatsApp (lista ligera, sin registro web)
+  // 3) Suscriptores por WhatsApp (lista ligera, sin registro web)
   const { data: subscribers } = await supabaseAdmin
     .from('investor_subscribers')
     .select('id, phone')
@@ -61,19 +86,18 @@ export async function notifyNewOpportunity(opportunity: any): Promise<void> {
 
   const now = new Date().toISOString()
   for (const sub of subscribers || []) {
-    const phone = sub.phone
-    if (!phone || sentPhones.has(phone)) continue
-    sentPhones.add(phone)
-
-    await sendWhatsAppMessage(phone, message)
-    await supabaseAdmin.from('investor_subscribers')
-      .update({ last_notified_at: now })
-      .eq('id', sub.id)
-      .catch(() => {})
-    sent++
+    const ok = await pushTo(sub.phone)
+    if (ok) {
+      await supabaseAdmin.from('investor_subscribers')
+        .update({ last_notified_at: now })
+        .eq('id', sub.id)
+        .catch(() => {})
+    }
   }
 
+  // El resumen de "oportunidad publicada" va al canal interno de Telegram,
+  // NO al WhatsApp del CEO (ese solo recibe prospectos).
   await sendTelegramNotification(
-    `📢 <b>Notificación enviada a ${sent} inversores</b>\n\n🏠 ${opportunity.title}\n📂 ${CATEGORY_NAMES[opportunity.category] || opportunity.category}`
+    `📢 <b>Oportunidad publicada — avisados ${sent} inversores</b>\n\n🏠 ${opportunity.title}\n📂 ${catName}`
   )
 }
