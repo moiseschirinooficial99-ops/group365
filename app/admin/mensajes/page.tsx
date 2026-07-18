@@ -20,6 +20,18 @@ interface Message {
   direction: 'inbound' | 'outbound'
   created_at: string
   is_read: boolean
+  status?: string | null
+}
+
+// Acuse de entrega de WhatsApp para mensajes salientes.
+function deliveryMark(status?: string | null) {
+  switch (status) {
+    case 'failed': return { icon: '⚠ no entregado', cls: 'text-red-300' }
+    case 'read': return { icon: '✓✓ leído', cls: 'text-sky-300' }
+    case 'delivered': return { icon: '✓✓ entregado', cls: '' }
+    case 'sent': return { icon: '✓ enviado', cls: '' }
+    default: return { icon: '✓✓', cls: '' }
+  }
 }
 
 function timeAgo(date: string) {
@@ -382,7 +394,9 @@ export default function MensajesAdmin() {
                             minute: '2-digit',
                           })}
                           {msg.direction === 'outbound' && (
-                            <span className="ml-1 opacity-70">✓✓</span>
+                            <span className={`ml-1 opacity-70 ${deliveryMark(msg.status).cls}`}>
+                              {deliveryMark(msg.status).icon}
+                            </span>
                           )}
                         </p>
                       </div>

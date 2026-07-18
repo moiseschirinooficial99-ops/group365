@@ -511,6 +511,22 @@ export async function POST(req: NextRequest) {
   console.log('WA WEBHOOK RECEIVED:', JSON.stringify(rawBody, null, 2))
 
   try {
+    // ── Acuses de entrega (sent / delivered / read / failed) ──
+    // Meta los empuja como "statuses" (no como "messages"). Actualizamos la
+    // fila saliente que coincida por wa_message_id para ver si llegó y se leyó.
+    const statuses = rawBody.entry?.[0]?.changes?.[0]?.value?.statuses
+    if (Array.isArray(statuses) && statuses.length) {
+      for (const s of statuses) {
+        if (!s?.id || !s?.status) continue
+        await supabaseAdmin
+          .from('wa_conversations')
+          .update({ status: s.status, status_at: new Date().toISOString() })
+          .eq('wa_message_id', s.id)
+          .catch(() => {})
+      }
+      return NextResponse.json({ ok: true })
+    }
+
     const msg = rawBody.entry?.[0]?.changes?.[0]?.value?.messages?.[0]
 
     if (!msg || msg.type !== 'text') {

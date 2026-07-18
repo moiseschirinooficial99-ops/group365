@@ -1,5 +1,22 @@
+import { supabaseAdmin } from '@/lib/supabase'
+
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID
+
+// Registra un mensaje saliente en wa_conversations para poder seguir su acuse
+// de entrega. Meta actualiza luego el status (delivered/read/failed) por webhook
+// buscando la fila con este wa_message_id. Nunca rompe el envío si falla.
+async function logOutbound(phone: string, message: string, waMessageId?: string | null): Promise<void> {
+  try {
+    await supabaseAdmin.from('wa_conversations').insert({
+      phone,
+      message,
+      direction: 'outbound',
+      wa_message_id: waMessageId || null,
+      status: waMessageId ? 'sent' : null,
+    })
+  } catch {}
+}
 
 // Número del CEO / encargado para avisos directos por WhatsApp.
 // Configurable con la variable CEO_WHATSAPP; por defecto el número de dirección.
@@ -39,11 +56,15 @@ export async function sendWhatsAppMessage(phone: string, message: string): Promi
   if (!token || !phoneId) return
   const to = normalizePhone(phone)
   if (!to) return
-  await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body: message } }),
-  }).catch(() => {})
+  try {
+    const res = await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body: message } }),
+    })
+    const data = await res.json().catch(() => null)
+    if (res.ok) await logOutbound(to, message, data?.messages?.[0]?.id)
+  } catch {}
 }
 
 // Envío por PLANTILLA aprobada. A diferencia del texto libre, la plantilla se
@@ -74,6 +95,11 @@ export async function sendWhatsAppTemplate(
         template: { name: templateName, language: { code: lang }, components },
       }),
     })
+    const data = await res.json().catch(() => null)
+    if (res.ok) {
+      const label = `📋 ${templateName}${bodyParams.length ? ': ' + bodyParams.join(' · ') : ''}`
+      await logOutbound(to, label, data?.messages?.[0]?.id)
+    }
     return res.ok
   } catch {
     return false
