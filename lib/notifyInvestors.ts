@@ -71,11 +71,13 @@ export async function notifyNewOpportunity(opportunity: any): Promise<void> {
   for (const p of profiles || []) {
     const ok = await pushTo(p.phone)
     if (ok) {
-      await supabaseAdmin.from('investor_notifications').insert({
-        opportunity_id: opportunity.id,
-        investor_id: p.id,
-        channel: 'whatsapp',
-      }).catch(() => {})
+      try {
+        await supabaseAdmin.from('investor_notifications').insert({
+          opportunity_id: opportunity.id,
+          investor_id: p.id,
+          channel: 'whatsapp',
+        })
+      } catch {}
     }
   }
 
@@ -100,10 +102,11 @@ export async function notifyNewOpportunity(opportunity: any): Promise<void> {
   for (const sub of subscribers || []) {
     const ok = await pushTo(sub.phone)
     if (ok) {
-      await supabaseAdmin.from('investor_subscribers')
-        .update({ last_notified_at: now })
-        .eq('id', sub.id)
-        .catch(() => {})
+      try {
+        await supabaseAdmin.from('investor_subscribers')
+          .update({ last_notified_at: now })
+          .eq('id', sub.id)
+      } catch {}
     }
   }
 

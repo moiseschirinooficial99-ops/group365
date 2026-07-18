@@ -476,7 +476,9 @@ async function handleInvestorSubscription(from: string): Promise<string> {
   // Alta / reactivación en la lista de avisos
   const row: any = { phone: from, is_active: true, source: registered ? 'registered' : 'whatsapp' }
   if (name) row.name = name
-  await supabaseAdmin.from('investor_subscribers').upsert(row, { onConflict: 'phone' }).catch(() => {})
+  try {
+    await supabaseAdmin.from('investor_subscribers').upsert(row, { onConflict: 'phone' })
+  } catch {}
 
   if (registered) {
     return `Perfecto${name ? ' ' + name : ''} ✅ Ya te tengo registrado como inversor y en la lista de avisos.\n\n`
@@ -518,11 +520,12 @@ export async function POST(req: NextRequest) {
     if (Array.isArray(statuses) && statuses.length) {
       for (const s of statuses) {
         if (!s?.id || !s?.status) continue
-        await supabaseAdmin
-          .from('wa_conversations')
-          .update({ status: s.status, status_at: new Date().toISOString() })
-          .eq('wa_message_id', s.id)
-          .catch(() => {})
+        try {
+          await supabaseAdmin
+            .from('wa_conversations')
+            .update({ status: s.status, status_at: new Date().toISOString() })
+            .eq('wa_message_id', s.id)
+        } catch {}
       }
       return NextResponse.json({ ok: true })
     }
@@ -568,9 +571,11 @@ export async function POST(req: NextRequest) {
     if (wantsInvestorNotify) {
       const subReply = await handleInvestorSubscription(from)
       await sendWA(from, subReply)
-      await supabaseAdmin.from('wa_conversations').insert({
-        phone: from, message: subReply, direction: 'outbound',
-      }).catch(() => {})
+      try {
+        await supabaseAdmin.from('wa_conversations').insert({
+          phone: from, message: subReply, direction: 'outbound',
+        })
+      } catch {}
       await sendTelegramNotification(
         `💼 <b>Inversor en lista de avisos</b>\n\n📱 ${from}\n💬 "${text.slice(0, 160)}"`
       )
