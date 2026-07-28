@@ -77,7 +77,7 @@ export async function generateContractPdf({ tipo, datos }: GenerateContractInput
 
   const drawFooter = (p: PDFPage) => {
     p.drawRectangle({ x: 0, y: 0, width: A4.w, height: 28, color: NEGRO })
-    const foot = `${config.empresa.nombreCompleto} · NIF ${config.empresa.nif} · ${config.contacto.direccion}, ${config.contacto.ciudad}`
+    const foot = `${config.empresa.nombreCompleto} · NIF ${config.empresa.nif} · ${config.contacto.ciudad}, ${config.contacto.provincia}`
     p.drawText(foot, { x: MARGIN, y: 10, size: 7, font: fontRegular, color: rgb(0.7, 0.7, 0.7) })
   }
 

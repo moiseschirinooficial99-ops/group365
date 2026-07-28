@@ -701,7 +701,7 @@ export default function HomePage() {
               {[
                 { code: 'WA', label: 'WhatsApp', value: config.contacto.whatsappDisplay, href: waLink() },
                 { code: '@',  label: 'Email',    value: config.contacto.email, href: null },
-                { code: 'ES', label: 'Dirección', value: `${config.contacto.direccion}, ${config.contacto.ciudad}, ${config.contacto.provincia}`, href: null },
+                { code: 'ES', label: 'Dirección', value: `${config.contacto.ciudad}, ${config.contacto.provincia}`, href: null },
               ].map((c, i) => (
                 <motion.div key={i} variants={FU} className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-lg bg-[#1B7F6F]/8 border border-[#1B7F6F]/18 flex items-center justify-center shrink-0">

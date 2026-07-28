@@ -10,7 +10,7 @@ export default function Privacidad() {
         <p className="mb-6">GROUP 360 INICIATIVAS se compromete a proteger tu privacidad y a tratar tus datos personales conforme al Reglamento General de Protección de Datos (RGPD) y la normativa española vigente.</p>
 
         <h2 className="text-xl font-bold text-white mt-8 mb-4">Responsable del tratamiento</h2>
-        <p className="mb-4">GRUPO 360 INICIATIVAS S.L. · NIF B13911979 · Passeig de Les Palmeres 16, Reus, Tarragona · info@group360iniciativas.com</p>
+        <p className="mb-4">GRUPO 360 INICIATIVAS S.L. · NIF B13911979 · Reus, Tarragona · info@group360iniciativas.com</p>
 
         <h2 className="text-xl font-bold text-white mt-8 mb-4">Datos que recopilamos</h2>
         <p className="mb-4">Nombre, email, teléfono y preferencias de inversión inmobiliaria facilitados voluntariamente a través de nuestros formularios de contacto o portal de inversores.</p>

@@ -34,7 +34,7 @@ export default function Footer() {
             {config.empresa.nombreCompleto} · NIF: {config.empresa.nif}
           </p>
           <p className="text-[#8B96A5] text-xs mb-6">
-            {config.contacto.direccion}, {config.contacto.ciudad}, {config.contacto.provincia}
+            {config.contacto.ciudad}, {config.contacto.provincia}
           </p>
           {done ? (
             <p className="text-[#1B7F6F] text-sm">Suscrito. Te mantendremos informado.</p>
@@ -78,7 +78,7 @@ export default function Footer() {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-[#1B7F6F] text-xs font-semibold shrink-0 pt-0.5">ES</span>
-              <span>{config.contacto.direccion},<br />{config.contacto.ciudad}, {config.contacto.provincia}</span>
+              <span>{config.contacto.ciudad}, {config.contacto.provincia}</span>
             </li>
           </ul>
 

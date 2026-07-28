@@ -20,7 +20,6 @@ export const config = {
     email: 'info@group360iniciativas.com',
     whatsapp: '34611251818',
     whatsappDisplay: '+34 611 25 18 18',
-    direccion: 'Passeig de Les Palmeres 16',
     ciudad: 'Reus',
     provincia: 'Tarragona',
     pais: 'España',
@@ -147,4 +146,4 @@ export const waLink = (msg?: string) =>
   `https://wa.me/${config.contacto.whatsapp}${msg ? `?text=${encodeURIComponent(msg)}` : ''}`
 
 export const direccionCompleta = () =>
-  `${config.contacto.direccion}, ${config.contacto.ciudad}, ${config.contacto.provincia}`
+  `${config.contacto.ciudad}, ${config.contacto.provincia}`
