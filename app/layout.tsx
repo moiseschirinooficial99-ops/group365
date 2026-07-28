@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { config } from '@/lib/config'
 import './globals.css'
 
-const SITE = 'https://group360iniciativas.com'
+const SITE = 'https://www.group360iniciativas.com'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
