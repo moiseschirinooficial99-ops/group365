@@ -6,7 +6,7 @@
 
 CREATE TABLE IF NOT EXISTS contratos (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tipo          TEXT NOT NULL,                    -- loi | compraventa | alquiler_vacacional | nda | inversion_spv
+  tipo          TEXT NOT NULL,                    -- loi | compraventa | alquiler_vacacional | nda | inversion_spv | personal_shopper
   datos_json    JSONB NOT NULL DEFAULT '{}',      -- campos variables editados por el admin
   estado        TEXT NOT NULL DEFAULT 'borrador', -- borrador | generado | enviado | firmado | error
   fecha         TIMESTAMPTZ NOT NULL DEFAULT now(),

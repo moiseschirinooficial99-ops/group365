@@ -180,7 +180,7 @@ export default function ContratosPage() {
         </div>
 
         {/* Selector de tipo */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
           {CONTRACT_TYPES.map(t => {
             const active = t.id === tipoId
             return (

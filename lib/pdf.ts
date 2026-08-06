@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════
 import { PDFDocument, StandardFonts, rgb, PDFFont, PDFPage } from 'pdf-lib'
 import { getContractType, renderPlantilla } from './contracts'
-import { config } from './config'
+import { config, direccionCompleta } from './config'
 
 // Paleta GROUP 360
 const ESMERALDA = rgb(0x1f / 255, 0xa6 / 255, 0x7a / 255) // #1FA67A
@@ -45,8 +45,9 @@ export async function generateContractPdf({ tipo, datos }: GenerateContractInput
   const def = getContractType(tipo)
   if (!def) throw new Error(`Tipo de contrato desconocido: ${tipo}`)
 
-  // Datos por defecto (ciudad de la empresa si el admin no la rellena)
-  const datosFull = { ciudad: config.contacto.ciudad, ...datos }
+  // Datos por defecto (localidad de la empresa si el admin no la rellena).
+  // Solo localidad y provincia — sin calle ni número.
+  const datosFull = { ciudad: direccionCompleta(), ...datos }
   const cuerpo = renderPlantilla(datos.plantilla || def.plantilla, datosFull)
 
   const pdf = await PDFDocument.create()
@@ -77,7 +78,7 @@ export async function generateContractPdf({ tipo, datos }: GenerateContractInput
 
   const drawFooter = (p: PDFPage) => {
     p.drawRectangle({ x: 0, y: 0, width: A4.w, height: 28, color: NEGRO })
-    const foot = `${config.empresa.nombreCompleto} · NIF ${config.empresa.nif} · ${config.contacto.ciudad}, ${config.contacto.provincia}`
+    const foot = `${config.empresa.nombreCompleto} · NIF ${config.empresa.nif} · ${direccionCompleta()}`
     p.drawText(foot, { x: MARGIN, y: 10, size: 7, font: fontRegular, color: rgb(0.7, 0.7, 0.7) })
   }
 
@@ -98,7 +99,7 @@ export async function generateContractPdf({ tipo, datos }: GenerateContractInput
     const raw = rawLines[i]
     // Detecta encabezados de cláusula / títulos para resaltar
     const isTitle = i === 0
-    const isHeading = /^(REUNIDOS|EXPONEN|CLÁUSULAS|PRIMERA\.|SEGUNDA\.|TERCERA\.|CUARTA\.|QUINTA\.|SEXTA\.|SÉPTIMA\.|OCTAVA\.)/.test(raw.trim())
+    const isHeading = /^(REUNIDOS|EXPONEN|EXPONEN:|ACUERDAN|CLÁUSULAS|DE UNA PARTE|Y DE OTRA PARTE|MANDATOS DE INVERSIÓN|SERVICIOS INCLUIDOS|PRIMER[OA]\.|SEGUND[OA]\.|TERCER[OA]\.|CUART[OA]\.|QUINT[OA]\.|SEXT[OA]\.|SÉPTIM[OA]\.|OCTAV[OA]\.|NOVEN[OA]\.|DÉCIM[OA]\.)/.test(raw.trim())
     const font = isTitle || isHeading ? fontBold : fontRegular
     const size = isTitle ? 15 : bodySize
     const color = isTitle ? NEGRO : isHeading ? ESMERALDA : rgb(0.12, 0.12, 0.12)

@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════
 // MÓDULO DE CONTRATOS — GROUP 360 INICIATIVAS
-// Definición de los 5 tipos de contrato, sus campos variables
+// Definición de los tipos de contrato, sus campos variables
 // y las plantillas editables (con marcadores {{campo}}).
 // ═══════════════════════════════════════════════════════
 
@@ -293,6 +293,163 @@ Y en prueba de conformidad, firman el presente contrato.
 ____________________________               ____________________________
 Por la Sociedad (SPV)                       El Inversor
 GRUPO 360 INICIATIVAS S.L.                  {{inversor}}`,
+  },
+
+  // ── 6. Personal Shopper Inmobiliario (PSI) ─────────────
+  {
+    id: 'personal_shopper',
+    nombre: 'Contrato de Personal Shopper',
+    descripcion: 'Contrato privado de prestación de servicio de Personal Shopper Inmobiliario (PSI): búsqueda, análisis y negociación de activos para el cliente inversor.',
+    emoji: '🕵️',
+    campos: [
+      ...CAMPO_DESTINATARIO,
+      { key: 'cliente', label: 'Cliente comprador / inversor', tipo: 'text', placeholder: 'Nombre y apellidos' },
+      { key: 'dni_cliente', label: 'DNI / NIE del cliente', tipo: 'text', placeholder: '00000000X' },
+      { key: 'domicilio_cliente', label: 'Domicilio del cliente', tipo: 'text', placeholder: 'Domicilio completo del cliente' },
+      { key: 'perfil_busqueda', label: 'Perfil de búsqueda / mandato', tipo: 'textarea', placeholder: 'Tipo de activo, zona, presupuesto máximo, rentabilidad objetivo...' },
+      { key: 'honorarios', label: 'Honorarios del PSI', tipo: 'text', placeholder: 'Ej. 5% + IVA sobre el precio de compra' },
+      { key: 'provision_fondos', label: 'Provisión de fondos (€)', tipo: 'number', placeholder: '3000' },
+      { key: 'importe_escritura', label: 'Importe restante en escritura', tipo: 'text', placeholder: 'Resto de honorarios a la firma notarial' },
+      { key: 'fecha', label: 'Fecha del contrato', tipo: 'date' },
+    ],
+    plantilla: `CONTRATO PRIVADO DE PRESTACIÓN DE SERVICIO DE PERSONAL SHOPPER INMOBILIARIO (PSI)
+
+En {{ciudad}}, a {{fecha}}.
+
+DE UNA PARTE
+
+GROUP 360 INICIATIVAS, S.L., con CIF B13911979 y domicilio social en Reus, Tarragona, representada por D. José Luis Jiménez Cortés, mayor de edad, con NIE X7631709X y domicilio en Plaza Libertad 15 2-2 Reus, en calidad de Administrador; en adelante, EL PERSONAL SHOPPER INMOBILIARIO (PSI).
+
+Y DE OTRA PARTE
+
+D./Dña. {{cliente}}, mayor de edad, con DNI {{dni_cliente}} y domicilio en {{domicilio_cliente}}, actuando en su propio nombre y derecho; en adelante, el CLIENTE COMPRADOR/A-INVERSOR/A.
+
+Ambas partes actúan en su propio nombre y derecho y se reconocen mutua y recíprocamente capacidad legal suficiente para el otorgamiento del presente contrato de PERSONAL SHOPPER INMOBILIARIO, y a tal fin:
+
+EXPONEN
+
+PRIMERO. Que el CLIENTE comprador (inversor) encarga mediante el presente contrato al PSI la búsqueda y gestión de la adquisición de uno o varios activos inmobiliarios para inversión, uso propio o desarrollo patrimonial, mediante compraventa de productos bancarios o de fondos (inversiones y fondos institucionales), conforme al siguiente perfil de búsqueda:
+{{perfil_busqueda}}
+
+MANDATOS DE INVERSIÓN
+
+• NPL.
+• Subasta.
+• REO.
+• Cesión de remate.
+• Producto ocupado con procesos judiciales.
+• Activos litigiosos.
+• Suelo, hoteles, etc.
+
+SEGUNDO. Que el PSI dispone de experiencia, conocimiento técnico, coordinación con abogados, arquitectos, notarios y entidades financieras, red de colaboradores, plataformas y herramientas de análisis, y acceso a oportunidades inmobiliarias tanto públicas como privadas (off market).
+
+TERCERO. Que ambas partes desean regular su relación profesional mediante el presente contrato.
+
+Por ello,
+
+ACUERDAN
+
+PRIMERA. OBJETO
+
+El presente contrato tiene por objeto la prestación de un servicio integral de PERSONAL SHOPPER INMOBILIARIO destinado a localizar, analizar, negociar y acompañar al CLIENTE durante todo el proceso de adquisición de activos inmobiliarios.
+
+El servicio podrá comprender, entre otros:
+
+• Definición del perfil inversor.
+• Diseño de la estrategia de inversión.
+• Búsqueda activa de oportunidades.
+• Acceso a inmuebles fuera de mercado (off market).
+• Análisis de rentabilidad.
+• Estudio financiero.
+• Due diligence documental (identificación de riesgos).
+• Estudio urbanístico.
+• Valoración económica.
+• Negociación con propietarios, entidades bancarias y fondos.
+• Coordinación con abogados, arquitectos, notarios y entidades financieras.
+• Acompañamiento hasta la firma de la escritura pública.
+
+SEGUNDA. SERVICIOS INCLUIDOS
+
+El PSI podrá prestar cualquiera de los siguientes servicios:
+
+• Localización de activos.
+• Análisis de mercado.
+• Estudios de rentabilidad.
+• Valoración del riesgo.
+• Cálculo de ROI.
+• Estudio de cash flow (flujo de caja).
+• Estrategias de reforma.
+• Estrategias de rentabilidad.
+• Gestión de financiación.
+• Negociación del precio.
+• Coordinación documental.
+• Seguimiento hasta la compra.
+
+TERCERA. OBLIGACIONES DEL PSI
+
+El PSI actuará con la máxima diligencia profesional. No garantiza la compra de un inmueble determinado ni una rentabilidad concreta; se compromete únicamente a emplear todos los medios profesionales razonables para alcanzar los objetivos del CLIENTE y el mayor ROI posible.
+
+BÚSQUEDA. El PSI se compromete a buscar inmuebles con las características requeridas por el CLIENTE en el expositivo primero, filtrando todos los productos que reúnan los citados requisitos y elaborando un informe lo más completo posible que remitirá al CLIENTE. Incluye revisión procesal, fase judicial, estado ocupacional, cargas hipotecarias y responsabilidad hipotecaria.
+
+ACOMPAÑAMIENTO. Durante todo el proceso de oferta bancaria, negociación y cierre. El PSI redacta y presenta la oferta de quita al banco o fondo acreedor en nombre del inversor, y coordina todos los plazos y trámites con la entidad financiera y los servicios implicados.
+
+NEGOCIACIÓN. El PSI negociará con el fondo, la entidad bancaria o quien esté encargado de gestionar la venta, en nombre del CLIENTE, el precio y las condiciones de la transacción, intentando conseguir el menor precio posible mediante la correspondiente oferta.
+
+ASESORAMIENTO. El PSI asesorará al CLIENTE en todos los trámites de la compra, venta y postventa del inmueble.
+
+CUARTA. OBLIGACIONES DEL CLIENTE
+
+El CLIENTE se obliga a:
+
+• Facilitar información veraz.
+• Acreditar solvencia cuando sea requerida.
+• Comunicar cualquier negociación realizada por su cuenta.
+• No ocultar operaciones relacionadas con inmuebles presentados por el PSI.
+• Pasar el PBC (Prevención del Blanqueo de Capitales) y aportar toda la documentación necesaria para la compra.
+
+El inversor se compromete con GROUP 360 a mantener el derecho de tanteo durante los dieciocho (18) meses siguientes, con honorarios del 5% más IVA sobre el precio de venta de mercado, garantizando el PSI la mayor rentabilidad y gestión, incluyendo todo el marketing promocional, fotografías y publicaciones en todas las plataformas de venta.
+
+CAPACIDAD ECONÓMICA. El CLIENTE comprador declara disponer de capacidad económica suficiente para adquirir un inmueble en el precio señalado en el expositivo primero.
+
+QUINTA. EXCLUSIVIDAD
+
+Durante la vigencia del contrato, el CLIENTE encomienda en exclusiva al PSI la búsqueda del inmueble objeto del presente contrato.
+
+El CLIENTE no podrá adquirir, directa o indirectamente, ningún inmueble presentado por el PSI sin su intervención, ni poner la información facilitada por el PSI a disposición de cualquiera de sus parientes en línea directa o colateral para que sean ellos quienes realicen la compraventa a espaldas del PSI.
+
+El CLIENTE se obliga a pagar los honorarios del PSI aun en el supuesto de que haya expirado el plazo de vigencia del presente contrato, cuando adquiera cualquiera de las propiedades que le haya ofrecido el PSI o sobre las que le haya transmitido información. Esta obligación se extenderá durante los doce (12) meses siguientes a la finalización del contrato respecto de cualquier inmueble presentado o negociado por el PSI.
+
+GROUP 360 gestiona una cartera exclusiva con base de datos de inmuebles procedentes de fondos de inversión y entidades bancarias en procesos judiciales activos, con acceso directo a plataformas y herramientas de análisis y a oportunidades inmobiliarias tanto públicas como privadas. GROUP 360 INICIATIVAS, S.L. actúa como mandatario y asesor estratégico en la localización, análisis y coordinación de operaciones.
+
+SEXTA. ACEPTACIÓN DEL ENCARGO
+
+El PSI acepta el encargo del CLIENTE de buscarle la vivienda o activo que reúna los requisitos enumerados en el expositivo primero, llevando a cabo las partes el presente contrato de Personal Shopper Inmobiliario de acuerdo con las cláusulas aquí recogidas.
+
+SÉPTIMA. CONFLICTO DE INTERÉS
+
+El PSI declara que se obliga a:
+
+• Preservar cualquier información confidencial y no desvelar a los demás clientes la existencia de ofertas o acuerdos encaminados a la adquisición de la propiedad objeto del presente contrato.
+• Trabajar con equidad en el supuesto de que varios de sus clientes compitan por la misma propiedad, dando siempre prioridad al primer inversor al que se le haya presentado el activo.
+
+OCTAVA. HONORARIOS
+
+Los honorarios del PSI serán de {{honorarios}} y se devengarán en las siguientes fases:
+
+PROVISIÓN DE FONDOS. El CLIENTE ingresará al PSI la cantidad de {{provision_fondos}} euros en concepto de provisión de fondos para los gastos que el presente encargo le pueda suponer, a la firma del presente contrato. El número de cuenta para el ingreso de los honorarios es el siguiente: CAIXABANK ES68 2100 3381 5122 0037 3587 (Group 360 Iniciativas S.L.).
+
+Esta cantidad es reembolsable en el caso de que la operación no fuera exitosa, devengándose únicamente el 10% del total de los honorarios por gastos de gestión, tiempo y servicio, y pudiendo servir la misma provisión de fondos para posteriores operaciones.
+
+PARTE RESTANTE. En el momento de la escritura pública se abonará la cantidad de {{importe_escritura}}. Dicha cantidad del PSI se descontará del precio final pactado entre CLIENTE y PSI sobre el total del precio de compra.
+
+Ambas partes aceptan libremente todos los términos del presente contrato, declarando expresamente que con él no se violan los términos de ningún otro contrato con una tercera parte.
+
+Y para que así conste, suscriben el presente documento por duplicado ejemplar y a un solo efecto, en {{ciudad}}, a {{fecha}}.
+
+
+____________________________               ____________________________
+GROUP 360 INICIATIVAS S.L.                  El Cliente Comprador/Inversor
+                                            {{cliente}}`,
   },
 ]
 
