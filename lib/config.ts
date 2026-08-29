@@ -28,9 +28,14 @@ export const config = {
 
   // ── PORTAL eXp ───────────────────────────────────────
   // Portal del agente dentro de eXp Spain (10minuteswebsite).
-  // Deja la URL vacía ('') para ocultar el enlace del footer.
+  //
+  // DESACTIVADO a 29/08/2026: ese dominio está sirviendo el sitio de la
+  // cuenta 7181 (Miguel Marcelino), no la 7183 de José Luis. Con el enlace
+  // activo mandaríamos nuestras visitas a la web de otro agente.
+  // Cuando eXp lo repare, poner portalActivo en true y desplegar.
   exp: {
     portal: 'https://joseluisjimenez.exp-spain.com',
+    portalActivo: false,
     agente: 'José Luis Jiménez',
     rol: 'Team Leader · Red inmobiliaria global',
   },

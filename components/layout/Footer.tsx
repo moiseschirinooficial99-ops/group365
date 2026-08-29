@@ -111,7 +111,7 @@ export default function Footer() {
       </div>
 
       {/* eXp Realty badge */}
-      {config.exp.portal ? (
+      {config.exp.portal && config.exp.portalActivo ? (
         <a
           href={config.exp.portal}
           target="_blank"
