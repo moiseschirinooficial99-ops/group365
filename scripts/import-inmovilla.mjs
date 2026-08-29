@@ -5,6 +5,9 @@
 // Supabase. Hace upsert por `external_ref`, así que se puede ejecutar
 // tantas veces como quieras: actualiza en vez de duplicar.
 //
+// SOLO IMPORTA VENTA Y ALQUILER TURISTICO (de temporada). El alquiler de
+// larga estancia y los traspasos se descartan: no van en la web.
+//
 // ANTES DE USARLO: ejecuta db/sql_import_inmovilla.sql en Supabase.
 //
 //   node scripts/import-inmovilla.mjs                  → simulacro (no escribe)
@@ -132,8 +135,23 @@ const parrafos = (s) => (s || '')
   .replace(/\n{3,}/g, '\n\n')
   .trim()
 
+// Del feed solo queremos VENTA y alquiler TURISTICO (de temporada).
+// El alquiler de larga estancia y los traspasos no entran en la web.
+// Ojo: "Vender o Alquilar" tambien es venta, y "Nuda propiedad" tambien.
+function clasifica(accion = '') {
+  const esTemporada = /temporada/i.test(accion)
+  const esVenta = /vender|venta|nuda propiedad/i.test(accion)
+  return {
+    admitida: esVenta || esTemporada,
+    // El turistico va al canal de alquiler, que es donde vive en la web.
+    canal: esVenta ? 'exp' : 'alquiler',
+    esVenta,
+  }
+}
+
 function mapProperty(f) {
-  const esAlquiler = /alquil/i.test(f.accion || '')
+  const { canal, esVenta, admitida } = clasifica(f.accion)
+  const esAlquiler = !esVenta
   const price = esAlquiler
     ? (euros(f.precioalq) || euros(f.precioinmo))
     : (euros(f.precioinmo) || euros(f.precioalq))
@@ -155,6 +173,8 @@ function mapProperty(f) {
   const bedrooms = (Number(f.habdobles) || 0) + (Number(f.habitaciones) || 0)
 
   return {
+    // Campo interno: se usa para filtrar y se quita antes de escribir.
+    _admitida: admitida,
     external_ref: (f.ref || '').trim(),
     source: 'inmovilla',
     title: title.slice(0, 300),
@@ -165,7 +185,7 @@ function mapProperty(f) {
     city: ciudad || null,
     province: (f.provincia || '').trim() || null,
     property_type: TIPOS[tipo.toLowerCase()] || 'house',
-    channel: esAlquiler ? 'alquiler' : 'exp',
+    channel: canal,
     bedrooms: bedrooms || null,
     bathrooms: (Number(f.banyos) || 0) || null,
     area_sqm: num(f.m_cons) || num(f.m_uties) || num(f.m_parcela),
@@ -204,10 +224,18 @@ async function main() {
     rows = rows.filter(r => (r.city || '').toLowerCase().includes(CIUDAD))
   }
 
+  // Fuera el alquiler de larga estancia y los traspasos: la web solo
+  // publica venta y turistico.
+  const antesFiltro = rows.length
+  rows = rows.filter(r => r._admitida)
+  const noAdmitidas = antesFiltro - rows.length
+
   // Descarta lo que no sirve para publicar
   const antes = rows.length
   rows = rows.filter(r => r.external_ref && r.price && r.title)
   const descartadas = antes - rows.length
+
+  rows = rows.map(({ _admitida, ...r }) => r)
 
   rows.sort((a, b) => (b.price || 0) - (a.price || 0))
   if (LIMIT) rows = rows.slice(0, LIMIT)
@@ -215,6 +243,7 @@ async function main() {
   const conFoto = rows.filter(r => r.main_image).length
   console.log(`\nFiltro: provincia=${PROVINCIA}${CIUDAD ? ` ciudad=${CIUDAD}` : ''}${LIMIT ? ` limite=${LIMIT}` : ''}`)
   console.log(`  ${rows.length} propiedades a importar (${conFoto} con foto)`)
+  if (noAdmitidas) console.log(`  ${noAdmitidas} descartadas por ser alquiler de larga estancia o traspaso`)
   if (descartadas) console.log(`  ${descartadas} descartadas por no tener referencia, precio o titulo`)
 
   console.log('\nMuestra:')
