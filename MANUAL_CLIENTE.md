@@ -47,7 +47,7 @@ Desde el panel admin puedes:
    - `city`: Ciudad
    - `bedrooms`, `bathrooms`: Número de habitaciones y baños
    - `area_sqm`: Metros cuadrados
-   - `property_type`: `apartment` | `house` | `villa` | `commercial` | `land`
+   - `property_type`: `apartment` | `house` | `villa` | `land` | `office` (locales, naves, garajes y edificios van como `office`)
    - `channel`: `personal` | `bank` (banco) | `investor`
    - `is_active`: `true` para que aparezca en la web
    - `estimated_roi`: Rentabilidad estimada (número, ej: `5.2`)

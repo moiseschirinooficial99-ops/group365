@@ -26,6 +26,15 @@ export const config = {
     web: 'https://group360iniciativas.com',
   },
 
+  // ── PORTAL eXp ───────────────────────────────────────
+  // Portal del agente dentro de eXp Spain (10minuteswebsite).
+  // Deja la URL vacía ('') para ocultar el enlace del footer.
+  exp: {
+    portal: 'https://joseluisjimenez.exp-spain.com',
+    agente: 'José Luis Jiménez',
+    rol: 'Team Leader · Red inmobiliaria global',
+  },
+
   // ── REDES SOCIALES ───────────────────────────────────
   redes: {
     instagram: 'https://www.instagram.com/group360iniciativas',

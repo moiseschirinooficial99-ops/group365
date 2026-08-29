@@ -195,13 +195,26 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false)
   const [testIdx, setTestIdx] = useState(0)
   const [featuredProps, setFeaturedProps] = useState<any[]>([])
+  // Nº real de activos en cartera. Alimenta el contador del hero para que
+  // deje de ser un número escrito a mano y se actualice solo con cada
+  // importación de Inmovilla.
+  const [totalActivos, setTotalActivos] = useState<number | null>(null)
 
   useEffect(() => {
     fetch('/api/properties')
       .then(r => r.json())
       .then((data: any[]) => {
         if (Array.isArray(data) && data.length > 0) {
-          setFeaturedProps(data.filter(p => p.channel !== 'alquiler').slice(0, 3))
+          setTotalActivos(data.length)
+          const enVenta = data.filter(p => p.channel !== 'alquiler')
+          // Si hay propiedades marcadas como destacadas, mandan ellas.
+          // Si no, enseñamos las de mayor valor: la cartera importada trae
+          // garajes y solares baratos y no pueden ser el escaparate.
+          const destacadas = enVenta.filter(p => p.is_featured)
+          const escaparate = destacadas.length >= 3
+            ? destacadas
+            : [...enVenta].sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0))
+          setFeaturedProps(escaparate.slice(0, 3))
         }
       })
       .catch(() => {})
@@ -268,7 +281,7 @@ export default function HomePage() {
                 </div>
                 <div>
                   <div className="font-playfair font-bold text-xl gold-text">
-                    <Counter target={250} suffix="+" />
+                    <Counter target={totalActivos ?? 0} suffix="+" />
                   </div>
                   <div className="text-xs text-[#8B96A5]">Activos en ubicaciones prime</div>
                 </div>

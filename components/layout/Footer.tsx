@@ -111,22 +111,49 @@ export default function Footer() {
       </div>
 
       {/* eXp Realty badge */}
-      <div className="max-w-7xl mx-auto mb-8 flex items-center gap-4 border border-white/5 rounded-xl px-6 py-4 bg-white/[0.02]">
-        <div className="shrink-0">
-          <Image
-            src="/logo exp.jpeg"
-            alt="eXp Realty"
-            width={100}
-            height={34}
-            className="object-contain opacity-90"
-          />
+      {config.exp.portal ? (
+        <a
+          href={config.exp.portal}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="max-w-7xl mx-auto mb-8 flex items-center gap-4 border border-white/5 hover:border-[#C9A84C]/30 rounded-xl px-6 py-4 bg-white/[0.02] hover:bg-white/[0.04] transition-colors group"
+        >
+          <div className="shrink-0">
+            <Image
+              src="/logo exp.jpeg"
+              alt="eXp Realty"
+              width={100}
+              height={34}
+              className="object-contain opacity-90"
+            />
+          </div>
+          <div className="flex-1">
+            <p className="text-[10px] tracking-[0.25em] text-[#8B96A5] uppercase mb-0.5">Orgullosos miembros de</p>
+            <p className="text-white text-sm font-semibold">eXp Realty</p>
+            <p className="text-[#8B96A5] text-xs">{config.exp.agente} · {config.exp.rol}</p>
+          </div>
+          <span className="hidden sm:inline text-xs text-[#8B96A5] group-hover:text-[#C9A84C] transition-colors shrink-0">
+            Ver portal eXp →
+          </span>
+        </a>
+      ) : (
+        <div className="max-w-7xl mx-auto mb-8 flex items-center gap-4 border border-white/5 rounded-xl px-6 py-4 bg-white/[0.02]">
+          <div className="shrink-0">
+            <Image
+              src="/logo exp.jpeg"
+              alt="eXp Realty"
+              width={100}
+              height={34}
+              className="object-contain opacity-90"
+            />
+          </div>
+          <div>
+            <p className="text-[10px] tracking-[0.25em] text-[#8B96A5] uppercase mb-0.5">Orgullosos miembros de</p>
+            <p className="text-white text-sm font-semibold">eXp Realty</p>
+            <p className="text-[#8B96A5] text-xs">{config.exp.rol}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-[10px] tracking-[0.25em] text-[#8B96A5] uppercase mb-0.5">Orgullosos miembros de</p>
-          <p className="text-white text-sm font-semibold">eXp Realty</p>
-          <p className="text-[#8B96A5] text-xs">Team Leader · Red inmobiliaria global</p>
-        </div>
-      </div>
+      )}
 
       <div className="max-w-7xl mx-auto pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-3">
         <p className="text-[#8B96A5] text-xs">
