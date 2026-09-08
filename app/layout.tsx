@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { config } from '@/lib/config'
+import Analytics from '@/components/Analytics'
 import './globals.css'
 
 const SITE = 'https://www.group360iniciativas.com'
@@ -101,7 +102,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <Analytics />
+        {children}
+      </body>
     </html>
   )
 }
