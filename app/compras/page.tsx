@@ -1,15 +1,13 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { MapPin } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PropertyCard from '@/components/cards/PropertyCard'
-import { config } from '@/lib/config'
 import { PROPERTY_TYPE_GROUPS } from '@/lib/propertyTypes'
 
 const CHANNELS = ['all', 'personal', 'bancaria', 'alquiler']
-const ZONES = ['all', ...config.zonasCostaDorada]
 
 const FADE_UP = {
   hidden: { opacity: 0, y: 30 },
@@ -30,10 +28,21 @@ export default function ComprasPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  // Las zonas salen de la cartera real, no de una lista fija a mano — si se
+  // trabajan más zonas (o se importan más provincias), aparecen solas aquí.
+  const zoneCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const p of properties) {
+      const city = (p.city || '').trim()
+      if (!city) continue
+      counts.set(city, (counts.get(city) || 0) + 1)
+    }
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1])
+  }, [properties])
+
   const filtered = properties
     .filter(p => channel === 'all' || p.channel === channel)
-    .filter(p => zone === 'all' || `${p.city || ''} ${p.zone || ''} ${p.location || ''}`
-      .toLowerCase().includes(zone.toLowerCase()))
+    .filter(p => zone === 'all' || (p.city || '').trim() === zone)
     .filter(p => type === 'all' || p.property_type === type)
 
   return (
@@ -73,18 +82,21 @@ export default function ComprasPage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap justify-center mb-4">
-            <span className="flex items-center gap-1.5 text-[#8B96A5] text-xs mr-1">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <label htmlFor="zona-propiedad" className="flex items-center gap-1.5 text-[#8B96A5] text-xs">
               <MapPin size={12} /> Zona
-            </span>
-            {ZONES.map(z => (
-              <button key={z} onClick={() => setZone(z)}
-                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  zone === z ? 'bg-[#1B7F6F] text-white font-bold' : 'bg-[#111827] text-gray-400 hover:text-white border border-[#1B7F6F]/15'
-                }`}>
-                {z === 'all' ? 'Toda la región' : z}
-              </button>
-            ))}
+            </label>
+            <select
+              id="zona-propiedad"
+              value={zone}
+              onChange={e => setZone(e.target.value)}
+              className="bg-[#111827] text-gray-300 text-sm border border-[#1B7F6F]/15 rounded-full px-4 py-1.5 focus:outline-none focus:border-[#1B7F6F]/40"
+            >
+              <option value="all">Toda la región ({properties.length})</option>
+              {zoneCounts.map(([city, count]) => (
+                <option key={city} value={city}>{city} ({count})</option>
+              ))}
+            </select>
           </div>
 
           <div className="flex items-center justify-center gap-2 mb-10">
