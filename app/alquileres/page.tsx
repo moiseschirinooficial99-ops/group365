@@ -1,9 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { MapPin } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PropertyCard from '@/components/cards/PropertyCard'
+import { config } from '@/lib/config'
+
+const ZONES = ['all', ...config.zonasCostaDorada]
 
 const FADE_UP = {
   hidden: { opacity: 0, y: 30 },
@@ -12,6 +16,7 @@ const FADE_UP = {
 
 export default function AlquileresPage() {
   const [rentals, setRentals] = useState<any[]>([])
+  const [zone, setZone] = useState('all')
   const [loadingProps, setLoadingProps] = useState(true)
   const [form, setForm] = useState({ name: '', email: '', phone: '', guests: '', dates: '' })
   const [sent, setSent] = useState(false)
@@ -23,6 +28,9 @@ export default function AlquileresPage() {
       .then((data: any[]) => setRentals(Array.isArray(data) ? data.filter(p => p.channel === 'alquiler') : []))
       .finally(() => setLoadingProps(false))
   }, [])
+
+  const filteredRentals = rentals.filter(p => zone === 'all' || `${p.city || ''} ${p.zone || ''} ${p.location || ''}`
+    .toLowerCase().includes(zone.toLowerCase()))
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,6 +77,21 @@ export default function AlquileresPage() {
             <h2 className="font-playfair text-4xl font-bold mb-3">Cartera de Activos</h2>
             <p className="text-gray-500">Gestión completa, rentabilidad neta estimada al máximo</p>
           </motion.div>
+
+          <div className="flex items-center gap-2 flex-wrap justify-center mb-10">
+            <span className="flex items-center gap-1.5 text-[#8B96A5] text-xs mr-1">
+              <MapPin size={12} /> Zona
+            </span>
+            {ZONES.map(z => (
+              <button key={z} onClick={() => setZone(z)}
+                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  zone === z ? 'bg-[#1B7F6F] text-white font-bold' : 'bg-[#111827] text-gray-400 hover:text-white border border-[#1B7F6F]/15'
+                }`}>
+                {z === 'all' ? 'Toda la región' : z}
+              </button>
+            ))}
+          </div>
+
           {loadingProps ? (
             <div className="grid md:grid-cols-3 gap-6 mb-16">
               {[...Array(3)].map((_, i) => (
@@ -77,9 +100,9 @@ export default function AlquileresPage() {
             </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-6 mb-16">
-              {rentals.length > 0
-                ? rentals.map(p => <PropertyCard key={p.id} property={p} />)
-                : <p className="col-span-3 text-center py-12 text-[#8B96A5]">No hay propiedades de alquiler disponibles por el momento.</p>
+              {filteredRentals.length > 0
+                ? filteredRentals.map(p => <PropertyCard key={p.id} property={p} />)
+                : <p className="col-span-3 text-center py-12 text-[#8B96A5]">No hay propiedades de alquiler en esta zona por el momento.</p>
               }
             </div>
           )}

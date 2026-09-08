@@ -29,13 +29,12 @@ export const config = {
   // ── PORTAL eXp ───────────────────────────────────────
   // Portal del agente dentro de eXp Spain (10minuteswebsite).
   //
-  // DESACTIVADO a 29/08/2026: ese dominio está sirviendo el sitio de la
-  // cuenta 7181 (Miguel Marcelino), no la 7183 de José Luis. Con el enlace
-  // activo mandaríamos nuestras visitas a la web de otro agente.
-  // Cuando eXp lo repare, poner portalActivo en true y desplegar.
+  // REACTIVADO a 08/09/2026: verificado en directo (home y /valora-tu-casa)
+  // que el dominio ya sirve la cuenta 7183 de José Luis / GROUP 360
+  // INICIATIVAS, no la de otro agente. eXp confirmó la corrección.
   exp: {
     portal: 'https://joseluisjimenez.exp-spain.com',
-    portalActivo: false,
+    portalActivo: true,
     agente: 'José Luis Jiménez',
     rol: 'Team Leader · Red inmobiliaria global',
   },
@@ -128,6 +127,12 @@ export const config = {
 
   // ── ZONAS DE OPERACIÓN ───────────────────────────────
   zonas: ['Madrid', 'Barcelona', 'Costa del Sol', 'Valencia', 'Alicante', 'Marbella', 'Sevilla', 'Bilbao', 'Tarragona', 'Reus'],
+
+  // ── ZONAS COSTA DORADA — buscador local (José Luis) ──
+  // Área operativa diaria de José Luis. Su cobertura real es más amplia
+  // (Tarragona, Cataluña, Barcelona y un poco más vía la red eXp), pero
+  // el buscador de la web se centra en estas zonas del día a día.
+  zonasCostaDorada: ['Tarragona', 'Reus', 'Salou', 'Cambrils', 'Vila-seca', 'Torredembarra'],
 
   // ── INVERSIÓN — PROCESO ──────────────────────────────
   inversion: {

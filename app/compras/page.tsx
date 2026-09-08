@@ -1,11 +1,14 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { MapPin } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PropertyCard from '@/components/cards/PropertyCard'
+import { config } from '@/lib/config'
 
 const CHANNELS = ['all', 'personal', 'bancaria', 'alquiler']
+const ZONES = ['all', ...config.zonasCostaDorada]
 
 const FADE_UP = {
   hidden: { opacity: 0, y: 30 },
@@ -14,6 +17,7 @@ const FADE_UP = {
 
 export default function ComprasPage() {
   const [channel, setChannel] = useState('all')
+  const [zone, setZone] = useState('all')
   const [properties, setProperties] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -24,9 +28,10 @@ export default function ComprasPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const filtered = channel === 'all'
-    ? properties
-    : properties.filter(p => p.channel === channel)
+  const filtered = properties
+    .filter(p => channel === 'all' || p.channel === channel)
+    .filter(p => zone === 'all' || `${p.city || ''} ${p.zone || ''} ${p.location || ''}`
+      .toLowerCase().includes(zone.toLowerCase()))
 
   return (
     <main>
@@ -54,13 +59,27 @@ export default function ComprasPage() {
 
       <section className="section">
         <div className="container">
-          <div className="flex gap-2 flex-wrap justify-center mb-10">
+          <div className="flex gap-2 flex-wrap justify-center mb-4">
             {CHANNELS.map(c => (
               <button key={c} onClick={() => setChannel(c)}
                 className={`px-5 py-2 rounded-full text-sm font-medium transition-all capitalize ${
                   channel === c ? 'bg-[#C9A84C] text-[#0A0A0A] font-bold' : 'bg-[#111827] text-gray-400 hover:text-white border border-[#C9A84C]/10'
                 }`}>
                 {c === 'all' ? 'Todas' : c === 'bancaria' ? '🏦 Bancarias' : c === 'alquiler' ? '🏖️ Turísticas' : '⭐ Exclusivas'}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap justify-center mb-10">
+            <span className="flex items-center gap-1.5 text-[#8B96A5] text-xs mr-1">
+              <MapPin size={12} /> Zona
+            </span>
+            {ZONES.map(z => (
+              <button key={z} onClick={() => setZone(z)}
+                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  zone === z ? 'bg-[#1B7F6F] text-white font-bold' : 'bg-[#111827] text-gray-400 hover:text-white border border-[#1B7F6F]/15'
+                }`}>
+                {z === 'all' ? 'Toda la región' : z}
               </button>
             ))}
           </div>

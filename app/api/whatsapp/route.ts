@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { callOpenAI } from '@/app/api/openai'
 import { sendTelegramNotification } from '@/lib/notifications'
+import { config } from '@/lib/config'
 
 const SYSTEM_PROMPT = `Eres Alejandro, el asistente virtual de GROUP 360 INICIATIVAS S.L.
 Eres cercano, profesional, directo y conoces en profundidad el mundo de la inversión inmobiliaria, las hipotecas impagadas (NPL) y el alquiler vacacional en la Costa Dorada.
@@ -591,12 +592,49 @@ export async function POST(req: NextRequest) {
       .limit(8)
     if (histErr) console.error('WA: history fetch failed:', histErr.message)
 
-    // Propiedades activas
-    const { data: properties, error: propsErr } = await supabaseAdmin
-      .from('properties')
-      .select('*')
-      .eq('is_active', true)
-      .limit(20)
+    // Propiedades relevantes al mensaje.
+    // Con 200+ propiedades del feed de eXp, un simple `.limit(20)` sin
+    // orden devuelve una muestra casi aleatoria — si el cliente pregunta
+    // por una referencia o zona concreta, lo normal es que no esté entre
+    // esas 20 y el bot "no responda" sobre esa propiedad. Primero se busca
+    // por referencia exacta, luego por zona mencionada, y solo si no hay
+    // pista se cae al muestreo general (propio primero, luego eXp).
+    const refMatch = text.match(/EXP\s?-?\s?\d{3,7}/i)
+    const refCode = refMatch ? refMatch[0].replace(/[\s-]/g, '').toUpperCase() : null
+    const zoneKeywords = [...config.zonasCostaDorada, "Vilaseca", "L'Ampolla", 'Priorat', 'Cap Salou']
+    const mentionedZone = zoneKeywords.find(z => t.includes(z.toLowerCase()))
+
+    let properties: any[] = []
+    let propsErr: any = null
+
+    if (refCode) {
+      const { data, error } = await supabaseAdmin
+        .from('properties').select('*').eq('is_active', true)
+        .ilike('external_ref', `%${refCode}%`).limit(5)
+      properties = data || []
+      propsErr = error
+    }
+
+    if (!properties.length && mentionedZone) {
+      const { data, error } = await supabaseAdmin
+        .from('properties').select('*').eq('is_active', true)
+        .or(`location.ilike.%${mentionedZone}%,city.ilike.%${mentionedZone}%,zone.ilike.%${mentionedZone}%`)
+        .limit(20)
+      properties = data || []
+      propsErr = propsErr || error
+    }
+
+    if (!properties.length) {
+      const [{ data: own, error: ownErr }, { data: expSample, error: expErr }] = await Promise.all([
+        supabaseAdmin.from('properties').select('*').eq('is_active', true)
+          .in('channel', ['personal', 'bancaria', 'alquiler']).limit(10),
+        supabaseAdmin.from('properties').select('*').eq('is_active', true)
+          .eq('channel', 'exp').limit(10),
+      ])
+      properties = [...(own || []), ...(expSample || [])]
+      propsErr = ownErr || expErr
+    }
+
     if (propsErr) console.error('WA: properties fetch failed:', propsErr.message)
 
     // Disponibilidad agente
