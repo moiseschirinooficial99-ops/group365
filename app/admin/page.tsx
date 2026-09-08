@@ -18,6 +18,26 @@ const STATUS_COLOR: Record<string, string> = {
   lost: 'text-red-400 bg-red-900/20',
 }
 
+// Pipeline de vendedores vs. compradores: mismo `leads`, separados por `type`.
+const TYPE_LABEL: Record<string, string> = {
+  vendedor: '🏠 Vendedor',
+  comprador: '🔑 Comprador',
+  inversor: '💰 Inversor',
+  inversores: '💰 Inversor',
+  alquiler: '🏖️ Alquiler',
+  contacto: '✉️ Contacto',
+  newsletter: '📩 Newsletter',
+}
+const TYPE_COLOR: Record<string, string> = {
+  vendedor: 'text-[#C9A84C] bg-[#C9A84C]/10 border-[#C9A84C]/30',
+  comprador: 'text-[#1B7F6F] bg-[#1B7F6F]/10 border-[#1B7F6F]/30',
+  inversor: 'text-purple-400 bg-purple-900/20 border-purple-500/30',
+  inversores: 'text-purple-400 bg-purple-900/20 border-purple-500/30',
+  alquiler: 'text-blue-400 bg-blue-900/20 border-blue-500/30',
+  contacto: 'text-gray-400 bg-gray-800/40 border-white/10',
+  newsletter: 'text-gray-500 bg-gray-800/30 border-white/5',
+}
+
 const PROP_STATUS: Record<string, { label: string; color: string; badge: string }> = {
   disponible:  { label: 'Disponible',      color: 'border-green-500/30',  badge: 'bg-green-500/15 text-green-400 border-green-500/30' },
   negociacion: { label: 'En Negociación',  color: 'border-blue-500/30',   badge: 'bg-blue-500/15 text-blue-400 border-blue-500/30' },
@@ -218,6 +238,7 @@ export default function Admin() {
   const [calendar, setCalendar] = useState<any[]>([])
   const [tab, setTab] = useState<Tab>('leads')
   const [filter, setFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState('all')
   const [stats, setStats] = useState({ total: 0, new: 0, hot: 0, totalProps: 0, converted: 0 })
   const [unreadWA, setUnreadWA] = useState(0)
 
@@ -256,7 +277,9 @@ export default function Admin() {
     const soldIds = new Set(soldProps.map((p: any) => p.id))
     const mergedProps = [...allProps, ...soldProps.filter((p: any) => !allProps.some((ap: any) => ap.id === p.id))]
 
-    setLeads(filter === 'all' ? leadsData : leadsData.filter(l => l.status === filter))
+    const byStatus = filter === 'all' ? leadsData : leadsData.filter(l => l.status === filter)
+    const byType = typeFilter === 'all' ? byStatus : byStatus.filter(l => (l.type || 'contacto') === typeFilter)
+    setLeads(byType)
     setProps(mergedProps)
     setHotLeads(hotData)
     setCalendar(calData)
@@ -272,7 +295,7 @@ export default function Admin() {
       totalProps: allProps.length,
       converted: leadsData.filter(l => l.status === 'converted').length,
     })
-  }, [filter])
+  }, [filter, typeFilter])
 
   useEffect(() => { loadAll() }, [loadAll])
 
@@ -434,6 +457,14 @@ export default function Admin() {
         {/* TAB: LEADS */}
         {tab === 'leads' && (
           <>
+            <div className="flex gap-2 mb-3 flex-wrap">
+              {['all','vendedor','comprador','inversor','alquiler','contacto','newsletter'].map(ty => (
+                <button key={ty} onClick={() => setTypeFilter(ty)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${typeFilter === ty ? 'bg-[#1B7F6F] text-white' : 'bg-[#111827] text-gray-500 hover:text-white border border-[#1B7F6F]/15'}`}>
+                  {ty === 'all' ? 'Todos los tipos' : (TYPE_LABEL[ty] || ty)}
+                </button>
+              ))}
+            </div>
             <div className="flex gap-2 mb-4 flex-wrap">
               {['all','new','contacted','qualified','converted','lost'].map(s => (
                 <button key={s} onClick={() => setFilter(s)}
@@ -447,13 +478,18 @@ export default function Admin() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-white/5 text-left text-[#8B96A5] text-xs">
-                      <th className="p-4">Nombre</th><th className="p-4">Contacto</th><th className="p-4">Fuente</th>
+                      <th className="p-4">Tipo</th><th className="p-4">Nombre</th><th className="p-4">Contacto</th><th className="p-4">Fuente</th>
                       <th className="p-4">Presupuesto</th><th className="p-4">Score</th><th className="p-4">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {leads.map(l => (
                       <tr key={l.id} className="border-b border-white/5 hover:bg-[#161D26] transition-colors">
+                        <td className="p-4">
+                          <span className={`text-xs px-2 py-1 rounded border font-medium whitespace-nowrap ${TYPE_COLOR[l.type] || TYPE_COLOR.contacto}`}>
+                            {TYPE_LABEL[l.type] || l.type || 'Contacto'}
+                          </span>
+                        </td>
                         <td className="p-4 font-medium text-white">{l.name || '—'}</td>
                         <td className="p-4">
                           <div className="text-xs text-[#8B96A5]">{l.email}</div>
@@ -474,7 +510,7 @@ export default function Admin() {
                     ))}
                   </tbody>
                 </table>
-                {leads.length === 0 && <div className="text-center py-12 text-[#8B96A5]">No hay leads.</div>}
+                {leads.length === 0 && <div className="text-center py-12 text-[#8B96A5]">No hay leads de este tipo.</div>}
               </div>
             </div>
           </>

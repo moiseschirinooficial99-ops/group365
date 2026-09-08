@@ -189,8 +189,16 @@ const MARQUEE_ITEMS = [
 ]
 
 /* ─── Page ─── */
+const MOTIVOS = [
+  { value: 'vendedor', label: 'Quiero vender mi propiedad' },
+  { value: 'comprador', label: 'Busco comprar una propiedad' },
+  { value: 'inversor', label: 'Invertir en NPL / deuda bancaria' },
+  { value: 'alquiler', label: 'Alquiler vacacional (gestionar o reservar)' },
+  { value: 'contacto', label: 'Otra consulta' },
+]
+
 export default function HomePage() {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', subject: 'vendedor', message: '' })
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [testIdx, setTestIdx] = useState(0)
@@ -227,7 +235,7 @@ export default function HomePage() {
       await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, type: 'contacto', source: 'landing' }),
+        body: JSON.stringify({ ...form, type: form.subject, source: 'landing' }),
       })
       setSent(true)
     } finally { setLoading(false) }
@@ -763,9 +771,11 @@ export default function HomePage() {
                     value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
                 </div>
                 <div>
-                  <label className="text-xs text-[#8B96A5] block mb-1.5">Asunto</label>
-                  <input className="input" placeholder="¿En qué podemos ayudarte?" required
-                    value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} />
+                  <label className="text-xs text-[#8B96A5] block mb-1.5">¿En qué podemos ayudarte?</label>
+                  <select className="input" required
+                    value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}>
+                    {MOTIVOS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label className="text-xs text-[#8B96A5] block mb-1.5">Mensaje</label>
