@@ -471,6 +471,70 @@ async function isRegisteredInvestor(from: string): Promise<{ registered: boolean
   return { registered: false }
 }
 
+// ─────────────────────────────────────────────
+// Bridge WhatsApp → CRM (tabla `leads`)
+//
+// El bot ya avisaba por Telegram en cada mensaje de vendedor/comprador
+// caliente, pero eso no dejaba rastro en el CRM — WhatsApp es el canal
+// principal y no alimentaba el pipeline de leads del panel /admin.
+// Aquí se extrae nombre + email + tipo (vendedor/comprador/inversor) de
+// la conversación, cuando ya están, y se crea o actualiza el lead en
+// `leads` (upsert por teléfono) para que quede en el mismo pipeline que
+// los leads de la web.
+// ─────────────────────────────────────────────
+async function syncLeadFromWhatsApp(params: {
+  phone: string
+  latestMessage: string
+  history: Array<{ message: string; direction: string }>
+}): Promise<void> {
+  if (!process.env.OPENAI_API_KEY) return
+  try {
+    const transcript = [...params.history].reverse()
+      .map(m => `${m.direction === 'inbound' ? 'Cliente' : 'Alejandro'}: ${m.message}`)
+      .join('\n') + `\nCliente: ${params.latestMessage}`
+
+    const extraction = await callOpenAI([
+      {
+        role: 'system',
+        content: `Analiza esta conversación de WhatsApp de una inmobiliaria y devuelve SOLO un JSON con esta forma exacta, sin texto adicional ni markdown:
+{"name": string|null, "email": string|null, "lead_type": "vendedor"|"comprador"|"inversor"|null}
+
+- "vendedor": el cliente tiene una propiedad y quiere venderla, alquilarla o valorarla.
+- "comprador": el cliente busca comprar o alquilar una propiedad.
+- "inversor": el cliente pregunta por invertir capital, NPL o deuda bancaria.
+- null si no hay señal clara de ninguna de las tres.
+- "name" y "email" solo si el cliente los ha escrito explícitamente en la conversación. Nunca los inventes.`,
+      },
+      { role: 'user', content: transcript },
+    ], 'gpt-4o-mini', 150, 'json_object')
+
+    const parsed = JSON.parse(extraction)
+    const leadType = parsed?.lead_type
+    if (!leadType) return
+
+    const digits = params.phone.replace(/\D/g, '')
+    const { data: existingRows } = await supabaseAdmin
+      .from('leads').select('id, name, email')
+      .ilike('phone', `%${digits.slice(-9)}%`)
+      .limit(1)
+    const existing = existingRows?.[0]
+
+    if (existing) {
+      const patch: Record<string, any> = { type: leadType, message: params.latestMessage }
+      if (parsed.name && !existing.name) patch.name = parsed.name
+      if (parsed.email && !existing.email) patch.email = parsed.email
+      await supabaseAdmin.from('leads').update(patch).eq('id', existing.id)
+    } else {
+      await supabaseAdmin.from('leads').insert({
+        name: parsed.name || null, email: parsed.email || null, phone: params.phone,
+        type: leadType, source: 'whatsapp', message: params.latestMessage, status: 'new',
+      })
+    }
+  } catch (e: any) {
+    console.error('WA: lead sync failed:', e.message)
+  }
+}
+
 async function handleInvestorSubscription(from: string): Promise<string> {
   const { registered, name } = await isRegisteredInvestor(from)
 
@@ -757,6 +821,12 @@ ROI estimado: ${p.estimated_roi || p.roi_percentage ? (p.estimated_roi || p.roi_
       await sendTelegramNotification(
         `🔥 <b>WhatsApp — lead caliente</b>\n\n📱 ${from}\n💬 "${text.slice(0, 200)}"`
       )
+    }
+
+    // Solo se llama a OpenAI una segunda vez (extracción) cuando ya hay
+    // señal de vendedor/comprador/inversor — evita gastar en cada mensaje.
+    if (isSeller || isHot) {
+      await syncLeadFromWhatsApp({ phone: from, latestMessage: text, history: history || [] })
     }
 
     return NextResponse.json({ ok: true })
