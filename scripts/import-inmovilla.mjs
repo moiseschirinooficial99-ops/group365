@@ -100,17 +100,18 @@ function splitProperties(xml) {
 
 // ── Mapeo de campos ──────────────────────────────────────
 const TIPOS = {
-  'piso': 'apartment', 'apartamento': 'apartment', 'ático': 'apartment',
-  'atico': 'apartment', 'dúplex': 'apartment', 'duplex': 'apartment',
-  'estudio': 'apartment', 'planta baja': 'apartment',
-  'casa': 'house', 'adosado': 'house', 'pareado': 'house',
-  'casa tipo dúplex': 'house', 'caserón': 'house', 'cortijo': 'house',
+  'piso': 'apartment', 'apartamento': 'apartment', 'departamento': 'apartment',
+  'ático': 'apartment', 'atico': 'apartment', 'dúplex': 'apartment',
+  'duplex': 'apartment', 'estudio': 'apartment', 'planta baja': 'apartment',
+  'casa': 'house', 'adosado': 'house', 'pareado': 'house', 'emparejado': 'house',
+  'casa tipo dúplex': 'house', 'caserón': 'house', 'cortijo': 'house', 'hogar': 'house',
   'chalet': 'villa', 'villa de lujo': 'villa',
   'local comercial': 'office', 'oficina': 'office',
   'nave industrial': 'office', 'negocio': 'office',
   'edificio': 'office', 'hotel': 'office', 'almacén': 'office',
-  'garaje': 'office', 'parking': 'office', 'trastero': 'office',
-  'terreno urbano': 'land', 'terreno urbanizable': 'land',
+  'garaje': 'office', 'garage incluido': 'office', 'aparcamiento': 'office',
+  'parking': 'office', 'trastero': 'office',
+  'terreno urbano': 'land', 'suelo urbano': 'land', 'terreno urbanizable': 'land',
   'terreno rústico': 'land', 'terreno rural': 'land', 'parcela': 'land',
   'finca rústica': 'land', 'finca cinegética': 'land',
 }

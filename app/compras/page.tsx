@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PropertyCard from '@/components/cards/PropertyCard'
 import { config } from '@/lib/config'
+import { PROPERTY_TYPE_GROUPS } from '@/lib/propertyTypes'
 
 const CHANNELS = ['all', 'personal', 'bancaria', 'alquiler']
 const ZONES = ['all', ...config.zonasCostaDorada]
@@ -18,6 +19,7 @@ const FADE_UP = {
 export default function ComprasPage() {
   const [channel, setChannel] = useState('all')
   const [zone, setZone] = useState('all')
+  const [type, setType] = useState('all')
   const [properties, setProperties] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -32,6 +34,7 @@ export default function ComprasPage() {
     .filter(p => channel === 'all' || p.channel === channel)
     .filter(p => zone === 'all' || `${p.city || ''} ${p.zone || ''} ${p.location || ''}`
       .toLowerCase().includes(zone.toLowerCase()))
+    .filter(p => type === 'all' || p.property_type === type)
 
   return (
     <main>
@@ -70,7 +73,7 @@ export default function ComprasPage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap justify-center mb-10">
+          <div className="flex items-center gap-2 flex-wrap justify-center mb-4">
             <span className="flex items-center gap-1.5 text-[#8B96A5] text-xs mr-1">
               <MapPin size={12} /> Zona
             </span>
@@ -82,6 +85,25 @@ export default function ComprasPage() {
                 {z === 'all' ? 'Toda la región' : z}
               </button>
             ))}
+          </div>
+
+          <div className="flex items-center justify-center gap-2 mb-10">
+            <label htmlFor="tipo-propiedad" className="text-[#8B96A5] text-xs">Tipo</label>
+            <select
+              id="tipo-propiedad"
+              value={type}
+              onChange={e => setType(e.target.value)}
+              className="bg-[#111827] text-gray-300 text-sm border border-[#C9A84C]/10 rounded-full px-4 py-1.5 focus:outline-none focus:border-[#C9A84C]/40"
+            >
+              <option value="all">Todos los tipos</option>
+              {PROPERTY_TYPE_GROUPS.map(g => (
+                <optgroup key={g.bucket} label={g.label}>
+                  {g.types.map(t => (
+                    <option key={t} value={g.bucket}>{t}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </div>
 
           {loading ? (
