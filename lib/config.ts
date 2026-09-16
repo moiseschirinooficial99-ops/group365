@@ -160,6 +160,12 @@ export const config = {
   },
 } as const
 
+// Version de Graph API de Meta usada por WhatsApp Cloud API. v18.0 fue
+// descontinuada por Meta el 26/01/2026; actualizado a la version activa
+// recomendada. Revisar https://developers.facebook.com/docs/graph-api/changelog
+// antes de que venza (Meta suele dar ~2 anos de vida por version).
+export const WA_GRAPH_VERSION = 'v26.0'
+
 // Helpers
 export const waLink = (msg?: string) =>
   `https://wa.me/${config.contacto.whatsapp}${msg ? `?text=${encodeURIComponent(msg)}` : ''}`

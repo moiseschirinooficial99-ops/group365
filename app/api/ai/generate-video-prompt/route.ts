@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { callOpenAI } from '@/app/api/openai'
+import { callAnthropic } from '@/app/api/anthropic'
 
 const VIDEO_TYPES = [
   'Aerial drone cinematic tour of the property exterior, golden hour lighting, luxury real estate',
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
     const prompts = await Promise.all(
       VIDEO_TYPES.map((template, i) =>
-        callOpenAI([
+        callAnthropic([
           {
             role: 'system',
             content: 'You are a professional real estate video director. Generate detailed cinematic video prompts for AI video generation. Be specific about camera movements, lighting, mood. Output in English only.',
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
             role: 'user',
             content: `Create a detailed video generation prompt (3-4 sentences) for: ${template}\n\nProperty: ${titulo}\nType: ${tipo}\nLocation: ${ubicacion}\nPrice: €${precio}\nSize: ${m2}m²\nDescription: ${descripcion || ''}`,
           },
-        ], 'gpt-4o-mini', 200)
+        ], 'claude-haiku-4-5-20251001', 200)
       )
     )
 

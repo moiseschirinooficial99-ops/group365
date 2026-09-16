@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { callOpenAI } from '@/app/api/openai'
+import { callAnthropic } from '@/app/api/anthropic'
 import { sendTelegramNotification } from '@/lib/notifications'
-import { config } from '@/lib/config'
+import { config, WA_GRAPH_VERSION } from '@/lib/config'
 
 const SYSTEM_PROMPT = `Eres Alejandro, el asistente virtual de GROUP 360 INICIATIVAS S.L.
 Eres cercano, profesional, directo y conoces en profundidad el mundo de la inversión inmobiliaria, las hipotecas impagadas (NPL) y el alquiler vacacional en la Costa Dorada.
@@ -414,7 +414,7 @@ async function sendWA(to: string, body: string): Promise<{ ok: boolean; error?: 
     return { ok: false, error: 'missing_credentials' }
   }
 
-  const url = `https://graph.facebook.com/v18.0/${phoneId}/messages`
+  const url = `https://graph.facebook.com/${WA_GRAPH_VERSION}/${phoneId}/messages`
   console.log('WA SEND →', { phoneId, to, bodyPreview: body.slice(0, 80) })
 
   try {
@@ -487,13 +487,13 @@ async function syncLeadFromWhatsApp(params: {
   latestMessage: string
   history: Array<{ message: string; direction: string }>
 }): Promise<void> {
-  if (!process.env.OPENAI_API_KEY) return
+  if (!process.env.ANTHROPIC_API_KEY) return
   try {
     const transcript = [...params.history].reverse()
       .map(m => `${m.direction === 'inbound' ? 'Cliente' : 'Alejandro'}: ${m.message}`)
       .join('\n') + `\nCliente: ${params.latestMessage}`
 
-    const extraction = await callOpenAI([
+    const extraction = await callAnthropic([
       {
         role: 'system',
         content: `Analiza esta conversación de WhatsApp de una inmobiliaria y devuelve SOLO un JSON con esta forma exacta, sin texto adicional ni markdown:
@@ -506,7 +506,7 @@ async function syncLeadFromWhatsApp(params: {
 - "name" y "email" solo si el cliente los ha escrito explícitamente en la conversación. Nunca los inventes.`,
       },
       { role: 'user', content: transcript },
-    ], 'gpt-4o-mini', 150, 'json_object')
+    ], 'claude-haiku-4-5-20251001', 150, 'json_object')
 
     const parsed = JSON.parse(extraction)
     const leadType = parsed?.lead_type
@@ -782,15 +782,15 @@ ROI estimado: ${p.estimated_roi || p.roi_percentage ? (p.estimated_roi || p.roi_
 
     // Respuesta IA
     let reply: string
-    if (!process.env.OPENAI_API_KEY) {
-      console.warn('WA: OPENAI_API_KEY not set — using fallback')
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.warn('WA: ANTHROPIC_API_KEY not set — using fallback')
       reply = `Hola! Soy el asistente de GROUP 360 INICIATIVAS. 🏠\n\nUn especialista te contactará pronto.\n\nMás info: https://group360iniciativas.com`
     } else {
       try {
-        reply = await callOpenAI(conversationMessages, 'gpt-4o-mini', 500)
+        reply = await callAnthropic(conversationMessages, 'claude-haiku-4-5-20251001', 500)
         console.log('WA AI reply:', reply.slice(0, 100))
       } catch (e: any) {
-        console.error('WA: OpenAI error:', e.message)
+        console.error('WA: Anthropic error:', e.message)
         reply = `Gracias por escribirnos. 🏠\n\nUn especialista de GROUP 360 te contactará pronto.\n\nVisítanos: https://group360iniciativas.com`
       }
     }

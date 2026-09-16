@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase'
+import { WA_GRAPH_VERSION } from '@/lib/config'
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID
@@ -57,7 +58,7 @@ export async function sendWhatsAppMessage(phone: string, message: string): Promi
   const to = normalizePhone(phone)
   if (!to) return
   try {
-    const res = await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
+    const res = await fetch(`https://graph.facebook.com/${WA_GRAPH_VERSION}/${phoneId}/messages`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body: message } }),
@@ -85,7 +86,7 @@ export async function sendWhatsAppTemplate(
     ? [{ type: 'body', parameters: bodyParams.map(t => ({ type: 'text', text: t })) }]
     : []
   try {
-    const res = await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
+    const res = await fetch(`https://graph.facebook.com/${WA_GRAPH_VERSION}/${phoneId}/messages`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({

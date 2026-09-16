@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { WA_GRAPH_VERSION } from '@/lib/config'
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,7 +11,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'WhatsApp no configurado' }, { status: 503 })
     }
 
-    const res = await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
+    const res = await fetch(`https://graph.facebook.com/${WA_GRAPH_VERSION}/${phoneId}/messages`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body: message } }),

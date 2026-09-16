@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { callOpenAI } from '@/app/api/openai'
+import { callAnthropic } from '@/app/api/anthropic'
 
 export async function POST(req: NextRequest) {
   try {
     const { titulo, tipo, precio, ubicacion, m2, habitaciones, banos } = await req.json()
 
-    const description = await callOpenAI([
+    const description = await callAnthropic([
       {
         role: 'system',
         content: 'Eres un copywriter inmobiliario premium español. Genera descripciones de propiedades profesionales, persuasivas y emocionalmente atractivas. Máximo 3 párrafos. Sin emojis.',

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Analiza un flyer/imagen de oportunidad con IA de visión (OpenAI)
+// Analiza un flyer/imagen de oportunidad con IA de visión (Anthropic Claude)
 // y devuelve los campos estructurados listos para prellenar el formulario.
 
 const EXTRACTION_PROMPT = `Eres un analista de inversión inmobiliaria de GROUP 360.
@@ -32,30 +32,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey || apiKey.startsWith('sk-proj-xxxx')) {
-    return NextResponse.json({ error: 'OPENAI_API_KEY no configurada' }, { status: 500 })
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) {
+    return NextResponse.json({ error: 'ANTHROPIC_API_KEY no configurada' }, { status: 500 })
   }
 
   try {
     const { imageUrl } = await req.json()
     if (!imageUrl) return NextResponse.json({ error: 'Falta imageUrl' }, { status: 400 })
 
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'claude-sonnet-5',
         max_tokens: 800,
         temperature: 0.2,
-        response_format: { type: 'json_object' },
+        system: EXTRACTION_PROMPT + '\n\nResponde unicamente con el objeto JSON, sin texto adicional ni markdown.',
         messages: [
-          { role: 'system', content: EXTRACTION_PROMPT },
           {
             role: 'user',
             content: [
               { type: 'text', text: 'Analiza este flyer/ficha de oportunidad y devuelve el JSON.' },
-              { type: 'image_url', image_url: { url: imageUrl } },
+              { type: 'image', source: { type: 'url', url: imageUrl } },
             ],
           },
         ],
@@ -64,11 +67,11 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       const err = await res.text()
-      return NextResponse.json({ error: `OpenAI ${res.status}: ${err.slice(0, 300)}` }, { status: 500 })
+      return NextResponse.json({ error: `Anthropic ${res.status}: ${err.slice(0, 300)}` }, { status: 500 })
     }
 
     const data = await res.json()
-    const raw = data.choices?.[0]?.message?.content || '{}'
+    const raw = data.content?.[0]?.text || '{}'
 
     let parsed: any
     try {
