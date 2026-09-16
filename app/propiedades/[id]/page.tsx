@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Bed, Bath, Maximize2, MapPin, MessageCircle, ChevronLeft, ChevronRight, Send, Link2, Check } from 'lucide-react'
+import { Bed, Bath, Maximize2, MapPin, MessageCircle, ChevronLeft, ChevronRight, Send, Link2, Check, Share2 } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Link from 'next/link'
@@ -85,8 +85,19 @@ function AvailabilityCalendar({ propertyId }: { propertyId: string }) {
 
 function ShareButtons({ title }: { title: string }) {
   const [copied, setCopied] = useState(false)
+  const [canNativeShare, setCanNativeShare] = useState(false)
   const url = typeof window !== 'undefined' ? window.location.href : ''
   const shareText = encodeURIComponent(`${title} — ${url}`)
+
+  useEffect(() => {
+    setCanNativeShare(typeof navigator !== 'undefined' && !!navigator.share)
+  }, [])
+
+  const nativeShare = async () => {
+    try {
+      await navigator.share({ title, text: title, url })
+    } catch {}
+  }
 
   const copyLink = async () => {
     try {
@@ -94,6 +105,15 @@ function ShareButtons({ title }: { title: string }) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {}
+  }
+
+  if (canNativeShare) {
+    return (
+      <button onClick={nativeShare}
+        className="flex items-center justify-center gap-2 w-full mt-3 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-all">
+        <Share2 size={16} /> Compartir
+      </button>
+    )
   }
 
   return (
