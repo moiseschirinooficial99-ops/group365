@@ -26,6 +26,22 @@ export default function AlquileresPage() {
       .finally(() => setLoadingProps(false))
   }, [])
 
+  // La zona también vive en la URL para sobrevivir a un back/forward del
+  // navegador: al volver desde la ficha de una propiedad, Next.js puede
+  // remontar esta página desde cero y perder el estado local si no está aquí.
+  useEffect(() => {
+    const z = new URLSearchParams(window.location.search).get('zona')
+    if (z) setZone(z)
+  }, [])
+
+  const updateUrlParam = (key: string, value: string) => {
+    const params = new URLSearchParams(window.location.search)
+    if (value === 'all') params.delete(key)
+    else params.set(key, value)
+    const qs = params.toString()
+    window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname)
+  }
+
   const zoneCounts = useMemo(() => {
     const counts = new Map<string, number>()
     for (const p of rentals) {
@@ -91,7 +107,7 @@ export default function AlquileresPage() {
             <select
               id="zona-alquiler"
               value={zone}
-              onChange={e => setZone(e.target.value)}
+              onChange={e => { setZone(e.target.value); updateUrlParam('zona', e.target.value) }}
               className="bg-[#111827] text-gray-300 text-sm border border-[#1B7F6F]/15 rounded-full px-4 py-1.5 focus:outline-none focus:border-[#1B7F6F]/40"
             >
               <option value="all">Toda la región ({rentals.length})</option>

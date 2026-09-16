@@ -28,6 +28,27 @@ export default function ComprasPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  // Los filtros también viven en la URL para sobrevivir a un back/forward del
+  // navegador: al volver desde la ficha de una propiedad, Next.js puede
+  // remontar esta página desde cero y perder el estado local si no está aquí.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const c = params.get('canal')
+    const z = params.get('zona')
+    const t = params.get('tipo')
+    if (c) setChannel(c)
+    if (z) setZone(z)
+    if (t) setType(t)
+  }, [])
+
+  const updateUrlParam = (key: string, value: string) => {
+    const params = new URLSearchParams(window.location.search)
+    if (value === 'all') params.delete(key)
+    else params.set(key, value)
+    const qs = params.toString()
+    window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname)
+  }
+
   // Las zonas salen de la cartera real, no de una lista fija a mano — si se
   // trabajan más zonas (o se importan más provincias), aparecen solas aquí.
   const zoneCounts = useMemo(() => {
@@ -73,7 +94,7 @@ export default function ComprasPage() {
         <div className="container">
           <div className="flex gap-2 flex-wrap justify-center mb-4">
             {CHANNELS.map(c => (
-              <button key={c} onClick={() => setChannel(c)}
+              <button key={c} onClick={() => { setChannel(c); updateUrlParam('canal', c) }}
                 className={`px-5 py-2 rounded-full text-sm font-medium transition-all capitalize ${
                   channel === c ? 'bg-[#C9A84C] text-[#0A0A0A] font-bold' : 'bg-[#111827] text-gray-400 hover:text-white border border-[#C9A84C]/10'
                 }`}>
@@ -89,7 +110,7 @@ export default function ComprasPage() {
             <select
               id="zona-propiedad"
               value={zone}
-              onChange={e => setZone(e.target.value)}
+              onChange={e => { setZone(e.target.value); updateUrlParam('zona', e.target.value) }}
               className="bg-[#111827] text-gray-300 text-sm border border-[#1B7F6F]/15 rounded-full px-4 py-1.5 focus:outline-none focus:border-[#1B7F6F]/40"
             >
               <option value="all">Toda la región ({properties.length})</option>
@@ -104,7 +125,7 @@ export default function ComprasPage() {
             <select
               id="tipo-propiedad"
               value={type}
-              onChange={e => setType(e.target.value)}
+              onChange={e => { setType(e.target.value); updateUrlParam('tipo', e.target.value) }}
               className="bg-[#111827] text-gray-300 text-sm border border-[#C9A84C]/10 rounded-full px-4 py-1.5 focus:outline-none focus:border-[#C9A84C]/40"
             >
               <option value="all">Todos los tipos</option>
