@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Bed, Bath, Maximize2, MapPin, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Bed, Bath, Maximize2, MapPin, MessageCircle, ChevronLeft, ChevronRight, Send, Link2, Check } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Link from 'next/link'
@@ -79,6 +79,40 @@ function AvailabilityCalendar({ propertyId }: { propertyId: string }) {
           <MessageCircle size={15} /> Consultar Disponibilidad en WhatsApp
         </a>
       </div>
+    </div>
+  )
+}
+
+function ShareButtons({ title }: { title: string }) {
+  const [copied, setCopied] = useState(false)
+  const url = typeof window !== 'undefined' ? window.location.href : ''
+  const shareText = encodeURIComponent(`${title} — ${url}`)
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {}
+  }
+
+  return (
+    <div className="flex items-center gap-2 mt-3">
+      <span className="text-[#8B96A5] text-xs mr-1">Compartir:</span>
+      <a href={`https://wa.me/?text=${shareText}`} target="_blank" rel="noopener noreferrer"
+        title="Compartir por WhatsApp"
+        className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366]/20 transition-all">
+        <MessageCircle size={15} />
+      </a>
+      <a href={`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`} target="_blank" rel="noopener noreferrer"
+        title="Compartir por Telegram"
+        className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#229ED9]/10 border border-[#229ED9]/30 text-[#229ED9] hover:bg-[#229ED9]/20 transition-all">
+        <Send size={15} />
+      </a>
+      <button onClick={copyLink} title="Copiar enlace"
+        className="w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-[#8B96A5] hover:text-white hover:bg-white/10 transition-all">
+        {copied ? <Check size={15} className="text-green-400" /> : <Link2 size={15} />}
+      </button>
     </div>
   )
 }
@@ -189,6 +223,8 @@ export default function PropertyDetailPage() {
                 className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-[#1B7F6F]/10 border border-[#1B7F6F]/25 text-[#1B7F6F] font-medium hover:bg-[#1B7F6F]/20 transition-all">
                 <MessageCircle size={16} /> Contactar por WhatsApp
               </a>
+
+              <ShareButtons title={property.title} />
             </motion.div>
           </div>
         </div>
