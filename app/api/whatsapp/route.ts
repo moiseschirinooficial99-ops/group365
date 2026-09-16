@@ -508,7 +508,16 @@ async function syncLeadFromWhatsApp(params: {
       { role: 'user', content: transcript },
     ], 'claude-haiku-4-5-20251001', 150, 'json_object')
 
-    const parsed = JSON.parse(extraction)
+    // Claude a veces envuelve el JSON en fences de markdown (```json ... ```)
+    // pese a la instruccion de no hacerlo. Se limpia antes de parsear.
+    const cleaned = extraction.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim()
+    let parsed: any
+    try {
+      parsed = JSON.parse(cleaned)
+    } catch {
+      const match = cleaned.match(/\{[\s\S]*\}/)
+      parsed = match ? JSON.parse(match[0]) : null
+    }
     const leadType = parsed?.lead_type
     if (!leadType) return
 
