@@ -2,6 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { notifyPropertyPublished } from '@/lib/notifications'
 import { isAdminChat } from '@/lib/adminAuth'
+import { crearCita, parseFechaMadrid, fmtFecha, KIND_LABEL } from '@/lib/citas'
+import { guardarDocumento, esTipoSoportado, resumenFiscal, rangoTrimestre } from '@/lib/contabilidad'
+
+export const maxDuration = 60 // lectura con IA de facturas
+
+async function descargarArchivoTelegram(fileId: string): Promise<Buffer | null> {
+  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${fileId}`)
+  const json = await res.json()
+  const filePath = json.result?.file_path
+  if (!filePath) return null
+  const file = await fetch(`https://api.telegram.org/file/bot${BOT_TOKEN}/${filePath}`)
+  return file.ok ? Buffer.from(await file.arrayBuffer()) : null
+}
+
+const eur = (v: any) => v === null || v === undefined
+  ? '—'
+  : `${Number(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 
@@ -52,7 +69,7 @@ export async function POST(req: NextRequest) {
 
     // /start
     if (text === '/start') {
-      await sendTelegram(chatId, `🏠 <b>Panel GROUP 360 INICIATIVAS</b>\n\n━━━━━━━━━━━━━━━━━\n📊 /leads — Últimos 10 leads\n🔥 /vendedores — Leads de captación\n📈 /stats — Estadísticas del negocio\n━━━━━━━━━━━━━━━━━\n📅 /disponible [nota] — Marcar disponible\n🔴 /ocupado [nota] — Marcar ocupado\n📌 /visita [dd/mm] [hh:mm] [nombre] — Agendar visita\n✅ /sold [id] — Marcar propiedad vendida\n━━━━━━━━━━━━━━━━━\n📸 Añadir propiedad:\nEnvía una FOTO con caption:\n<code>Título | Precio | Zona | Hab | Baños | M2 | Tipo</code>\n\nEjemplo:\n<code>Villa Marbella | 650000 | Costa del Sol | 5 | 4 | 380 | venta</code>\n\nTipos: venta · alquiler · bancaria\n━━━━━━━━━━━━━━━━━\n🌐 Panel web: group360iniciativas.com/admin`)
+      await sendTelegram(chatId, `🏠 <b>Panel GROUP 360 INICIATIVAS</b>\n\n━━━━━━━━━━━━━━━━━\n📊 /leads — Últimos 10 leads\n🔥 /vendedores — Leads de captación\n📈 /stats — Estadísticas del negocio\n━━━━━━━━━━━━━━━━━\n📅 /disponible [nota] — Marcar disponible\n🔴 /ocupado [nota] — Marcar ocupado\n📌 /visita [dd/mm] [hh:mm] [nombre] — Agendar visita\n📞 /llamada [dd/mm] [hh:mm] [nombre] — Agendar llamada\n🗓️ /citas — Próximas citas\n━━━━━━━━━━━━━━━━━\n🧾 Contabilidad: envía la FOTO o el PDF de una factura o ticket (sin caption con |) y se guarda y lee sola\n💶 /gastos — Resumen del trimestre\n━━━━━━━━━━━━━━━━━\n✅ /sold [id] — Marcar propiedad vendida\n━━━━━━━━━━━━━━━━━\n📸 Añadir propiedad:\nEnvía una FOTO con caption:\n<code>Título | Precio | Zona | Hab | Baños | M2 | Tipo</code>\n\nEjemplo:\n<code>Villa Marbella | 650000 | Costa del Sol | 5 | 4 | 380 | venta</code>\n\nTipos: venta · alquiler · bancaria\n━━━━━━━━━━━━━━━━━\n🌐 Panel web: group360iniciativas.com/admin`)
       return NextResponse.json({ ok: true })
     }
 
@@ -147,27 +164,75 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true })
     }
 
-    // /visita [fecha] [hora] [nombre]
-    if (text.startsWith('/visita')) {
-      const parts = text.slice('/visita'.length).trim().split(' ')
-      const fechaStr = parts[0] || ''
-      const hora = parts[1] || '10:00'
-      const nombre = parts.slice(2).join(' ') || 'Lead'
+    // /visita | /llamada [dd/mm] [hh:mm] [nombre] [— notas]
+    if (text.startsWith('/visita') || text.startsWith('/llamada')) {
+      const kind = text.startsWith('/visita') ? 'visita' : 'llamada'
+      const parts = text.split(/\s+/).slice(1)
+      const startsAt = parts[0] && parts[1] ? parseFechaMadrid(parts[0], parts[1]) : null
+      if (!startsAt) {
+        await sendTelegram(chatId, `❌ Uso: <code>/${kind} 15/10 17:30 Nombre del cliente</code>`)
+        return NextResponse.json({ ok: true })
+      }
+      const [nombre, notas] = parts.slice(2).join(' ').split(/\s+[—-]\s+/)
+      const cita = await crearCita({ name: nombre || 'Cliente', starts_at: startsAt, kind, notes: notas || null, source: 'telegram' })
+      await sendTelegram(chatId, `✅ ${KIND_LABEL[kind]} agendada\n\n👤 ${cita.name}\n🕐 ${fmtFecha(cita.starts_at)}\n\nTe la recuerdo 45 min antes.`)
+      return NextResponse.json({ ok: true })
+    }
 
-      let dateFrom: Date
+    // /citas
+    if (text === '/citas') {
+      const { data } = await supabaseAdmin.from('appointments').select('*')
+        .in('status', ['pendiente', 'confirmada']).gte('starts_at', new Date().toISOString())
+        .order('starts_at').limit(15)
+      const list = (data || []).map((c: any) =>
+        `• ${fmtFecha(c.starts_at)} — ${KIND_LABEL[c.kind] || c.kind} con <b>${c.name}</b>${c.phone ? ` (${c.phone})` : ''}`
+      ).join('\n')
+      await sendTelegram(chatId, list ? `🗓️ <b>Próximas citas</b>\n\n${list}` : '🗓️ No hay citas próximas.')
+      return NextResponse.json({ ok: true })
+    }
+
+    // /gastos — resumen del trimestre en curso
+    if (text === '/gastos') {
+      const now = new Date()
+      const q = Math.ceil((now.getMonth() + 1) / 3)
+      const { from, to } = rangoTrimestre(now.getFullYear(), q)
+      const { data } = await supabaseAdmin.from('accounting_documents').select('*')
+        .gte('issue_date', from).lte('issue_date', to)
+      const r = resumenFiscal(data || [])
+      await sendTelegram(chatId, `💶 <b>Contabilidad ${q}T ${now.getFullYear()}</b>\n\n🧾 Documentos: ${(data || []).length} (por revisar: ${r.pendientes_revision})\n📈 Ingresos: ${eur(r.ingresos_total)}\n📉 Gastos: ${eur(r.gastos_total)}\n\nIVA repercutido: ${eur(r.iva_repercutido)}\nIVA soportado: ${eur(r.iva_soportado)}\n<b>Diferencia IVA (orientativa): ${eur(r.iva_resultado)}</b>\n\n🔗 https://www.group360iniciativas.com/admin/contabilidad`)
+      return NextResponse.json({ ok: true })
+    }
+
+    // Foto o PDF sin el formato "Título | Precio | …" → documento contable.
+    const caption = (message.caption || '').trim()
+    const doc = message.document
+    if ((photo?.length > 0 || doc) && !caption.includes('|')) {
+      const fileId = doc ? doc.file_id : photo[photo.length - 1].file_id
+      const mime = doc ? (doc.mime_type || '') : 'image/jpeg'
+      const fileName = doc?.file_name || `telegram-${Date.now()}.jpg`
+      if (!esTipoSoportado(mime)) {
+        await sendTelegram(chatId, '❌ Formato no admitido. Envía una foto, JPG/PNG o PDF.')
+        return NextResponse.json({ ok: true })
+      }
+      if (doc?.file_size && doc.file_size > 15 * 1024 * 1024) {
+        await sendTelegram(chatId, '❌ El archivo supera 15 MB.')
+        return NextResponse.json({ ok: true })
+      }
+      await sendTelegram(chatId, '🧾 Recibido, leyendo el documento…')
+      const buffer = await descargarArchivoTelegram(fileId)
+      if (!buffer) {
+        await sendTelegram(chatId, '❌ No pude descargar el archivo de Telegram. Prueba otra vez.')
+        return NextResponse.json({ ok: true })
+      }
       try {
-        const [day, month, year] = fechaStr.includes('/') ? fechaStr.split('/') : fechaStr.split('-')
-        dateFrom = new Date(`${year || new Date().getFullYear()}-${month?.padStart(2,'0')}-${day?.padStart(2,'0')}T${hora}:00`)
-        if (isNaN(dateFrom.getTime())) dateFrom = new Date()
-      } catch { dateFrom = new Date() }
-
-      const dateTo = new Date(dateFrom.getTime() + 60 * 60 * 1000)
-
-      await supabaseAdmin.from('agent_availability').insert({
-        date_from: dateFrom.toISOString(), date_to: dateTo.toISOString(),
-        notes: `Visita con ${nombre}`, status: 'visit', source: 'telegram',
-      })
-      await sendTelegram(chatId, `📅 Visita agendada\n\n👤 ${nombre}\n🕐 ${dateFrom.toLocaleString('es-ES')}\n\nRegistrada en el sistema.`)
+        const d = await guardarDocumento({ buffer, mime, fileName, source: 'telegram', notes: caption || null })
+        const tipo = d.direction === 'ingreso' ? '📈 Ingreso' : d.direction === 'gasto' ? '📉 Gasto' : '📄 Documento'
+        const aviso = d.ai_confidence === 'baja' ? '\n\n⚠️ Lectura dudosa: revísalo en el panel.' : ''
+        await sendTelegram(chatId, `✅ <b>Guardado en contabilidad</b>\n\n${tipo} · ${d.doc_type}\n🏢 ${d.counterparty || '—'}${d.counterparty_nif ? ` (${d.counterparty_nif})` : ''}\n📅 ${d.issue_date || 'sin fecha'}\n💶 Base ${eur(d.base_amount)} · IVA ${eur(d.vat_amount)} · <b>Total ${eur(d.total_amount)}</b>\n🏷️ ${d.category || '—'}${d.ai_notes ? `\n📝 ${d.ai_notes}` : ''}${aviso}`)
+      } catch (e: any) {
+        console.error('Telegram contabilidad:', e?.message)
+        await sendTelegram(chatId, '❌ No pude guardar el documento. Inténtalo de nuevo o súbelo desde el panel.')
+      }
       return NextResponse.json({ ok: true })
     }
 
@@ -198,7 +263,6 @@ export async function POST(req: NextRequest) {
 
     // Photo with caption → add property
     if (photo?.length > 0) {
-      const caption = message.caption || ''
       const propData = parsePipeSeparated(caption)
 
       if (!propData) {

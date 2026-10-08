@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // El SDK de Anthropic se carga tal cual desde node_modules: al empaquetarlo,
+  // Next 14.1 rompe una expresión regular interna ("Range out of order").
+  experimental: {
+    serverComponentsExternalPackages: ['@anthropic-ai/sdk'],
+  },
   images: {
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
