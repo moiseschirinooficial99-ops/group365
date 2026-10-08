@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { notifyPropertyPublished } from '@/lib/notifications'
+import { isAdminChat } from '@/lib/adminAuth'
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 
@@ -41,6 +42,13 @@ export async function POST(req: NextRequest) {
     const chatId = String(message.chat.id)
     const text = (message.text || '').trim()
     const photo = message.photo
+
+    // El bot da acceso a leads, estadísticas y altas de propiedades: solo
+    // responde a los chats del equipo. El resto se ignora en silencio.
+    if (!isAdminChat(chatId)) {
+      console.warn('Telegram: chat no autorizado', chatId)
+      return NextResponse.json({ ok: true })
+    }
 
     // /start
     if (text === '/start') {

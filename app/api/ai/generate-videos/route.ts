@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { generateVideo } from '@/lib/abacus'
+import { isAdmin, unauthorized } from '@/lib/adminAuth'
 
 export async function POST(req: NextRequest) {
+  if (!isAdmin(req)) return unauthorized()
   try {
     const { propertyId, prompts } = await req.json()
     if (!propertyId || !prompts?.length) {

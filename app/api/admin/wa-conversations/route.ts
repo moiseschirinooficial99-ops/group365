@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { isAdmin, unauthorized } from '@/lib/adminAuth'
 
 export async function GET(req: NextRequest) {
+  if (!isAdmin(req)) return unauthorized()
   const phone = req.nextUrl.searchParams.get('phone')
 
   if (phone) {
@@ -74,6 +76,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!isAdmin(req)) return unauthorized()
   const body = await req.json().catch(() => ({}))
   const { phone, action } = body
 

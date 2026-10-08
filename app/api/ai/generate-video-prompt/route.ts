@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { callAnthropic } from '@/app/api/anthropic'
+import { isAdmin, unauthorized } from '@/lib/adminAuth'
 
 const VIDEO_TYPES = [
   'Aerial drone cinematic tour of the property exterior, golden hour lighting, luxury real estate',
@@ -8,6 +9,7 @@ const VIDEO_TYPES = [
 ]
 
 export async function POST(req: NextRequest) {
+  if (!isAdmin(req)) return unauthorized()
   try {
     const { titulo, tipo, ubicacion, precio, m2, descripcion } = await req.json()
 

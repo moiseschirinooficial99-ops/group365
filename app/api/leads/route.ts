@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { isAdmin, unauthorized } from '@/lib/adminAuth'
 import { scoreLead } from '@/lib/scoring'
 import { notifyNewLead, notifyHotLead } from '@/lib/notifications'
 
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  if (!isAdmin(req)) return unauthorized()
   const { searchParams } = new URL(req.url)
   const hot = searchParams.get('hot')
 
@@ -48,6 +50,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!isAdmin(req)) return unauthorized()
   try {
     const { searchParams } = new URL(req.url)
     const id = searchParams.get('id')

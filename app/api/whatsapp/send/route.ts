@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { WA_GRAPH_VERSION } from '@/lib/config'
+import { isAdmin, unauthorized } from '@/lib/adminAuth'
 
 export async function POST(req: NextRequest) {
+  if (!isAdmin(req)) return unauthorized()
   try {
     const { to, message } = await req.json()
     const token = process.env.WHATSAPP_TOKEN

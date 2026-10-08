@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { callAnthropic } from '@/app/api/anthropic'
+import { isAdmin, unauthorized } from '@/lib/adminAuth'
 
 export async function POST(req: NextRequest) {
+  if (!isAdmin(req)) return unauthorized()
   try {
     const { titulo, tipo, precio, ubicacion, m2, habitaciones, banos } = await req.json()
 
