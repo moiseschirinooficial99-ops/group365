@@ -1,0 +1,59 @@
+{
+  "name": "GROUP 360 — Avisos del panel (citas y seguimientos)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "minutes", "minutesInterval": 10 }] }
+      },
+      "id": "c1a0b7d2-0001-4e51-9a01-avisos000001",
+      "name": "Cada 10 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 200]
+    },
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "cronExpression", "expression": "0 8 * * *" }] }
+      },
+      "id": "c1a0b7d2-0002-4e51-9a01-avisos000002",
+      "name": "Cada día 8:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://www.group360iniciativas.com/api/admin/avisos",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 30000 }
+      },
+      "id": "c1a0b7d2-0003-4e51-9a01-avisos000003",
+      "name": "Recordatorios y seguimientos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 200],
+      "credentials": { "httpHeaderAuth": { "id": "", "name": "GROUP360 panel (Bearer ADMIN_SECRET)" } }
+    },
+    {
+      "parameters": {
+        "url": "https://www.group360iniciativas.com/api/admin/avisos?resumen=1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 30000 }
+      },
+      "id": "c1a0b7d2-0004-4e51-9a01-avisos000004",
+      "name": "Resumen diario",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 400],
+      "credentials": { "httpHeaderAuth": { "id": "", "name": "GROUP360 panel (Bearer ADMIN_SECRET)" } }
+    }
+  ],
+  "connections": {
+    "Cada 10 min": { "main": [[{ "node": "Recordatorios y seguimientos", "type": "main", "index": 0 }]] },
+    "Cada día 8:00": { "main": [[{ "node": "Resumen diario", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "timezone": "Europe/Madrid", "executionOrder": "v1" },
+  "active": false
+}

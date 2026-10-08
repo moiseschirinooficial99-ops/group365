@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Plus, TrendingUp, Users, Home, Calendar, Flame, X, ChevronLeft, ChevronRight, MessageSquare, Pencil, FileText } from 'lucide-react'
+import { Plus, TrendingUp, Users, Home, Calendar, Flame, X, ChevronLeft, ChevronRight, MessageSquare, Pencil, FileText, Receipt } from 'lucide-react'
 
 const SCORE_BADGE = (score: number) => {
   if (score >= 80) return 'text-red-400 bg-red-900/20 border border-red-500/30'
@@ -404,7 +404,16 @@ export default function Admin() {
             <span className="green-text">GROUP</span> <span className="gold-text">360</span>
             <span className="text-white/40 text-xl ml-3">Panel de Control</span>
           </h1>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            <Link href="/admin/crm" className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-lg bg-[#161D26] border border-purple-500/25 text-purple-300 hover:bg-purple-500/10 transition-colors">
+              <Users size={15} /> CRM
+            </Link>
+            <Link href="/admin/agenda" className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-lg bg-[#161D26] border border-[#C9A84C]/20 text-[#C9A84C] hover:bg-[#C9A84C]/10 transition-colors">
+              <Calendar size={15} /> Agenda
+            </Link>
+            <Link href="/admin/contabilidad" className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-lg bg-[#161D26] border border-[#1FA67A]/25 text-[#1FA67A] hover:bg-[#1FA67A]/10 transition-colors">
+              <Receipt size={15} /> Contabilidad
+            </Link>
             <Link href="/admin/inventario" className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-lg bg-[#161D26] border border-white/5 text-[#8B96A5] hover:text-white transition-colors">
               <Home size={15} /> Inventario
             </Link>
@@ -608,6 +617,9 @@ export default function Admin() {
         {/* TAB: CALENDARIO/AGENDA */}
         {tab === 'calendario' && (
           <div className="space-y-3">
+            <Link href="/admin/agenda" className="card p-4 flex items-center justify-between text-sm text-[#C9A84C] hover:bg-[#C9A84C]/5">
+              <span>📅 Las citas con clientes (llamadas, visitas) están en la nueva Agenda</span><span>Abrir →</span>
+            </Link>
             {calendar.length === 0 ? (
               <div className="card p-12 text-center">
                 <p className="text-[#8B96A5] mb-4">No hay visitas agendadas próximamente.</p>
