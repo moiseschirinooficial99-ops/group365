@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { sendTelegramNotification } from '@/lib/notifications'
+import { isAdmin, unauthorized } from '@/lib/adminAuth'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isAdmin(req)) return unauthorized()
   try {
     await sendTelegramNotification(
       `✅ <b>Test de notificaciones GROUP 360</b>\n\nSistema de alertas activo y funcionando.\n\n🔔 Recibirás alertas por:\n• Nuevo lead → nombre, email, teléfono, score\n• Lead caliente (score >70%) → notificación urgente\n• Vendedor detectado → captación inmediata\n• Token WhatsApp expirado → aviso con instrucciones\n• Nueva propiedad publicada → confirmación\n\n🌐 Panel web: group360iniciativas.com/admin`

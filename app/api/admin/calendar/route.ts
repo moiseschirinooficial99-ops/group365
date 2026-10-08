@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { isAdmin, unauthorized } from '@/lib/adminAuth'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isAdmin(req)) return unauthorized()
   const { data } = await supabaseAdmin
     .from('agent_availability')
     .select('*')
