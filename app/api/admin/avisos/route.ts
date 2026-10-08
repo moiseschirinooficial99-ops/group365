@@ -4,16 +4,29 @@ import { isAdmin, unauthorized } from '@/lib/adminAuth'
 import { sendTelegramNotification } from '@/lib/notifications'
 import { fmtFecha, KIND_LABEL } from '@/lib/citas'
 
-// Lo dispara n8n (workflow "avisos-panel", cada 10 min) con
-// `Authorization: Bearer <ADMIN_SECRET>`. Envía a Telegram:
+// Lo dispara pg_cron de Supabase cada 10 min (db/sql_avisos_pg_cron.sql) con
+// `Authorization: Bearer <token>`; el token lo genera la propia base de datos y
+// vive en app_settings.avisos_token, así nadie tiene que copiarlo a mano.
+// También acepta la sesión de admin / Bearer ADMIN_SECRET. Envía a Telegram:
 //  - recordatorio de cada cita que empieza en los próximos 45 min (una vez)
 //  - seguimientos de leads que han vencido (una vez por fecha de seguimiento)
-//  - con ?resumen=1 (n8n lo llama a las 8:00): agenda del día + seguimientos
+//  - resumen diario: primera pasada desde las 8:00 de Madrid, una vez al día
+//    (o forzado con ?resumen=1)
 export async function GET(req: NextRequest) { return run(req) }
 export async function POST(req: NextRequest) { return run(req) }
 
+const RESUMEN_KEY = 'avisos_resumen_ultimo_dia'
+
+async function tokenAvisosValido(req: NextRequest) {
+  const auth = req.headers.get('authorization') || ''
+  if (!auth.startsWith('Bearer ')) return false
+  const { data } = await supabaseAdmin.from('app_settings').select('value').eq('key', 'avisos_token').maybeSingle()
+  const token = data?.value || ''
+  return token.length >= 32 && auth.slice(7) === token
+}
+
 async function run(req: NextRequest) {
-  if (!isAdmin(req)) return unauthorized()
+  if (!isAdmin(req) && !(await tokenAvisosValido(req))) return unauthorized()
   const now = new Date()
   const out = { recordatorios: 0, seguimientos: 0, resumen: false }
 
@@ -53,7 +66,13 @@ async function run(req: NextRequest) {
   }
 
   // ── Resumen diario ──
-  if (req.nextUrl.searchParams.get('resumen')) {
+  const hoyMadrid = now.toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }) // AAAA-MM-DD
+  const horaMadrid = Number(now.toLocaleString('en-GB', { timeZone: 'Europe/Madrid', hour: '2-digit', hourCycle: 'h23' }))
+  const { data: ultimo } = await supabaseAdmin.from('app_settings').select('value').eq('key', RESUMEN_KEY).maybeSingle()
+  const tocaResumen = !!req.nextUrl.searchParams.get('resumen') || (horaMadrid >= 8 && ultimo?.value !== hoyMadrid)
+  if (tocaResumen) {
+    await supabaseAdmin.from('app_settings')
+      .upsert({ key: RESUMEN_KEY, value: hoyMadrid, updated_at: now.toISOString() })
     const fin = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString()
     const { data: hoy } = await supabaseAdmin.from('appointments')
       .select('*').in('status', ['pendiente', 'confirmada'])
