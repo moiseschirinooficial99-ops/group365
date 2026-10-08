@@ -224,9 +224,25 @@ MERCADO ALQUILER VACACIONAL (Costa Dorada):
 Crecimiento proyectado del mercado: +180% hasta 2026.
 Meta de GROUP 360: 100 propiedades gestionadas, 1.500 reservas mensuales.
 
+══ REGLA Nº1 — PRIMERO RESPONDE, DESPUÉS CALIFICA ══
+
+Si el cliente pregunta por una propiedad concreta (por nombre, enlace, referencia o "me interesa la propiedad…"), tu PRIMERA respuesta es SIEMPRE la información de esa propiedad, tomada del contexto:
+- Precio, ubicación, dormitorios, baños, m², extras más destacados y el enlace de la ficha si lo tienes
+- Responde exactamente lo que pregunta (garaje, piscina, gastos, estado…). Si un dato no está en el contexto, dilo con naturalidad y ofrece que José Luis se lo confirme
+- Cierra con UNA sola pregunta suave que haga avanzar: "¿Le gustaría verla en persona o prefiere que José Luis le llame para comentarla?"
+
+PROHIBIDO en esa primera respuesta: preguntar presupuesto, capital disponible o rango de inversión. El cliente ya dijo qué le interesa; preguntarle por dinero antes de darle la información genera desconfianza.
+Las preguntas de calificación (presupuesto, financiación, plazos) solo van DESPUÉS de haber resuelto sus dudas y de una en una, nunca en lista.
+
+Si la propiedad que menciona NO aparece en el contexto: no inventes datos ni cambies de tema. Di que lo verificas con el equipo y pide permiso para que José Luis le contacte con la ficha completa.
+
+══ AGENDAR VISITA O LLAMADA CON JOSÉ LUIS ══
+
+Cuando el cliente acepte una visita o llamada, pídele (si no lo ha dicho ya) su nombre y el día y la franja horaria que mejor le viene. Usa la DISPONIBILIDAD DEL AGENTE que tienes al final para no proponer horas ocupadas. Confirma: "Perfecto, [nombre]. Le dejo apuntada la llamada con José Luis el [día] a las [hora]; él le confirma por aquí."
+
 ══ CÓMO DEBES RESPONDER ══
 
-DETECTA PRIMERO qué tipo de cliente es:
+DETECTA qué tipo de cliente es:
 
 TIPO A — INVERSOR CON CAPITAL (>30.000€ disponibles):
 → Pregunta: ¿cuánto capital tiene disponible y en qué plazo?
@@ -235,8 +251,8 @@ TIPO A — INVERSOR CON CAPITAL (>30.000€ disponibles):
 → Objetivo: agendar llamada con José Luis
 
 TIPO B — BUSCA COMPRAR PROPIEDAD:
-→ Pregunta: zona, presupuesto, uso (vivir/invertir), urgencia
-→ Muestra propiedades disponibles del contexto
+→ Si pregunta por una propiedad concreta: aplica la REGLA Nº1 (primero la información)
+→ Si busca en general: muestra propiedades disponibles del contexto y pregunta zona, uso (vivir/invertir) y urgencia
 → Objetivo: visita o llamada con José Luis
 
 TIPO C — TIENE PROPIEDAD Y QUIERE RENTABILIZARLA:
@@ -677,10 +693,35 @@ export async function POST(req: NextRequest) {
     const zoneKeywords = [...config.zonasCostaDorada, "Vilaseca", "L'Ampolla", 'Priorat', 'Cap Salou']
     const mentionedZone = zoneKeywords.find(z => t.includes(z.toLowerCase()))
 
+    // Mensajes que llegan desde la web: "me interesa la propiedad: <título>\n
+    // https://…/propiedades/<uuid>". Se busca primero por id del enlace y, si
+    // el mensaje no trae enlace (versiones antiguas del botón), por título.
+    // Se mira también el historial entrante para que las preguntas siguientes
+    // ("¿tiene garaje?") sigan teniendo esa propiedad en contexto.
+    // Si el mensaje actual ya menciona otra referencia o zona, manda el mensaje actual.
+    const inboundText = (refCode || mentionedZone) ? text : [text, ...(history || []).filter((m: any) => m.direction === 'inbound').map((m: any) => m.message)].join('\n')
+    const linkedId = inboundText.match(/propiedades\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i)?.[1]
+    const titleMatch = inboundText.match(/interesa la propiedad:\s*([^\n(]+)/i)?.[1]?.trim()
+
     let properties: any[] = []
     let propsErr: any = null
 
-    if (refCode) {
+    if (linkedId) {
+      const { data, error } = await supabaseAdmin
+        .from('properties').select('*').eq('id', linkedId).limit(1)
+      properties = data || []
+      propsErr = error
+    }
+
+    if (!properties.length && titleMatch && titleMatch.length >= 6) {
+      const { data, error } = await supabaseAdmin
+        .from('properties').select('*').eq('is_active', true)
+        .ilike('title', `%${titleMatch.replace(/[%_,()]/g, ' ').slice(0, 120)}%`).limit(3)
+      properties = data || []
+      propsErr = propsErr || error
+    }
+
+    if (!properties.length && refCode) {
       const { data, error } = await supabaseAdmin
         .from('properties').select('*').eq('is_active', true)
         .ilike('external_ref', `%${refCode}%`).limit(5)
@@ -760,6 +801,7 @@ export async function POST(req: NextRequest) {
           return `PROPIEDAD: ${p.title}
 Tipo: ${isAlquiler ? 'alquiler_turistico' : (p.type || p.channel || 'venta')} | Estado: ${p.status || p.property_status || 'disponible'}
 Ubicación: ${p.location}
+Ficha: https://www.group360iniciativas.com/propiedades/${p.id}
 Precio: ${precioInfo}
 Características: ${caracteristicas || 'ver descripción'}
 Extras: ${amenidades.length > 0 ? amenidades.join(', ') : 'ver descripción'}

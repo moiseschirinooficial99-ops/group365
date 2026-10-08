@@ -173,7 +173,7 @@ export default function PropertyDetailPage() {
   )
 
   const images: string[] = property.images?.length ? property.images : [property.main_image].filter(Boolean)
-  const waText = encodeURIComponent(`Hola, me interesa la propiedad: ${property.title}`)
+  const waText = encodeURIComponent(`Hola, me interesa la propiedad: ${property.title}\nhttps://www.group360iniciativas.com/propiedades/${property.id}`)
   const isRental = property.channel === 'alquiler'
 
   return (
