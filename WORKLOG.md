@@ -21,3 +21,4 @@
 - Fix: al publicar una oportunidad con "avisar a inversores", el envío de WhatsApp ahora se espera (antes era una promesa suelta que Vercel podía cortar).
 - Probado: extracción de fotos con PDF de prueba (2/2 fotos buenas; descarta logo, CMYK y duplicada). `next build` OK. La lectura con IA solo se puede probar en producción/preview.
 - WhatsApp: el 611 sigue Conectado; Meta envía al webhook pero respondemos 401 porque `META_APP_SECRET` en Vercel no coincide con la app 968681136164152. Pendiente que Moisés la actualice.
+- **WhatsApp operativo de nuevo (10:59 UTC):** con `WHATSAPP_SKIP_SIGNATURE=1` el webhook acepta, la IA responde y el envío da 200. `META_APP_SECRET` sigue mal (valor de 58 caracteres; la clave tiene 32). Pendiente: guardarla bien, quitar el escape y hacer token permanente con usuario del sistema.
