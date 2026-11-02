@@ -34,3 +34,7 @@
 - Prompt sacado a `lib/botPrompt.ts` (lo comparten webhook y simulador). Quitado "riesgo cero" y rentabilidades como promesa.
 - Simulador: `npx tsx scripts/probar-bot.ts [A|B|C] [cliente]` → 6 clientes ficticios conversan con el bot; transcripción en `pruebas-bot/` (gitignored).
 - Producción: PR #9 y #10 ya mergeados y desplegados (ruta de documentos responde 401 sin sesión = OK).
+
+## 2026-11-02 — Ajustes del bot tras el simulador
+- Primera prueba (6 clientes): buen saludo y cierre de llamadas, pero mensajes de 55–122 palabras, rechazó hablar inglés, dijo "garantizado" y "no pagas abogados", inventó un rango de precio y el estado de licencias de La Pineda, y usaba **negrita** Markdown.
+- Arreglo: RECORDATORIO_FINAL al final del prompt (idioma del cliente, ≤50 palabras, formato WhatsApp, sin precios/valoraciones, sin estado de licencias por municipio, sin "garantizado/blindado", citas las confirma José Luis), limpieza de "garantizado/blindado" en el prompt base, `toWhatsAppFormat()` antes de enviar y max_tokens 350 → 250. El simulador marca ahora esas palabras.

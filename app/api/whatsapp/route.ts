@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { styleFor } from '@/lib/botKnowledge'
-import { buildSystemPrompt } from '@/lib/botPrompt'
+import { buildSystemPrompt, toWhatsAppFormat } from '@/lib/botPrompt'
 import { supabaseAdmin } from '@/lib/supabase'
 import { callAnthropic } from '@/app/api/anthropic'
 import { sendTelegramNotification } from '@/lib/notifications'
@@ -506,7 +506,7 @@ ROI estimado: ${p.estimated_roi || p.roi_percentage ? (p.estimated_roi || p.roi_
       reply = `Hola! Soy el asistente de GROUP 360 INICIATIVAS. 🏠\n\nUn especialista te contactará pronto.\n\nMás info: https://group360iniciativas.com`
     } else {
       try {
-        reply = await callAnthropic(conversationMessages, 'claude-haiku-4-5-20251001', 350)
+        reply = toWhatsAppFormat(await callAnthropic(conversationMessages, 'claude-haiku-4-5-20251001', 250))
         console.log('WA AI reply:', reply.slice(0, 100))
       } catch (e: any) {
         console.error('WA: Anthropic error:', e.message)
