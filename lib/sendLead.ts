@@ -5,6 +5,8 @@
 //  - si el servidor responde con error, lanza un Error con un texto que
 //    se puede enseñar al usuario.
 
+import { trackLead } from '@/lib/consent'
+
 const HONEYPOT_FIELD = 'website'
 
 export async function sendLead(
@@ -34,4 +36,5 @@ export async function sendLead(
       ? data.error
       : 'No hemos podido enviar tu mensaje. Escríbenos por WhatsApp o inténtalo de nuevo.')
   }
+  trackLead(typeof payload.source === 'string' ? payload.source : undefined)
 }

@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion'
 import { Bed, Bath, Maximize2, MapPin, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
+import { config } from '@/lib/config'
 
 const CHANNEL_LABEL: Record<string, string> = {
   exp:      'Activo disponible',
@@ -13,7 +14,7 @@ const CHANNEL_LABEL: Record<string, string> = {
 export default function PropertyCard({ property }: { property: any }) {
   const label = CHANNEL_LABEL[property.channel] || 'Disponible'
   const waText = encodeURIComponent(`Hola, me interesa la propiedad: ${property.title} (€${Number(property.price).toLocaleString('es-ES')})\nhttps://www.group360iniciativas.com/propiedades/${property.id}`)
-  const agentPhone = (process.env.NEXT_PUBLIC_AGENT_WHATSAPP || '34611251818').replace(/\D/g, '')
+  const agentPhone = (process.env.NEXT_PUBLIC_AGENT_WHATSAPP || config.contacto.whatsapp).replace(/\D/g, '')
   const waUrl = `https://wa.me/${agentPhone}?text=${waText}`
 
   return (

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { MapPin, Bed, Bath, Maximize2, Calculator, MessageSquare, LogOut, TrendingUp, Clock, User, Home, FileText, ChevronDown, Image as ImageIco } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import OpportunityModal from '@/components/OpportunityModal'
+import { config } from '@/lib/config'
 
 type Tab = 'propiedades' | 'consultas' | 'calculadora' | 'contacto'
 
@@ -365,7 +366,7 @@ export default function Dashboard() {
                                 Sin activos disponibles en este momento. Te avisamos cuando haya una nueva oportunidad.
                               </p>
                               <a
-                                href={`https://wa.me/34611251818?text=Hola, soy ${profile?.name || 'un inversor'} y quiero que me avisen de oportunidades de ${v.label}.`}
+                                href={`https://wa.me/${config.contacto.whatsapp}?text=Hola, soy ${profile?.name || 'un inversor'} y quiero que me avisen de oportunidades de ${v.label}.`}
                                 target="_blank" rel="noopener noreferrer"
                                 className={`inline-block text-xs px-4 py-2 rounded-lg border font-semibold ${v.accentColor} ${v.borderColor} hover:bg-white/5 transition-colors`}
                               >
@@ -737,7 +738,7 @@ export default function Dashboard() {
               <p className="text-[#8B96A5] text-sm mb-6">Habla directamente con tu asesor patrimonial.</p>
 
               <a
-                href={`https://wa.me/34611251818?text=Hola, soy ${profile?.name || 'un inversor'} y quiero más información sobre oportunidades de inversión.`}
+                href={`https://wa.me/${config.contacto.whatsapp}?text=Hola, soy ${profile?.name || 'un inversor'} y quiero más información sobre oportunidades de inversión.`}
                 target="_blank" rel="noopener noreferrer"
                 className="flex items-center justify-center gap-3 w-full py-4 rounded-xl bg-[#25D366]/10 border border-[#25D366]/25 text-[#25D366] font-medium hover:bg-[#25D366]/20 transition-all mb-4"
               >

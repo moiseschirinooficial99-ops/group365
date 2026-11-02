@@ -22,7 +22,7 @@ export default function ComprasPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/properties')
+    fetch('/api/properties?view=card')
       .then(r => r.json())
       .then(data => setProperties(Array.isArray(data) ? data : []))
       .finally(() => setLoading(false))

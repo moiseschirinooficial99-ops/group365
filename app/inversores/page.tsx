@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import OpportunityModal from '@/components/OpportunityModal'
+import { config } from '@/lib/config'
 
 const FADE_UP = {
   hidden: { opacity: 0, y: 24 },
@@ -13,7 +14,7 @@ const FADE_UP = {
 }
 const STAGGER = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } }
 
-const WA_BASE = 'https://wa.me/34611251818?text=Hola,%20me%20interesa%20una%20oportunidad%20de%20'
+const WA_BASE = `https://wa.me/${config.contacto.whatsapp}?text=Hola,%20me%20interesa%20una%20oportunidad%20de%20`
 
 type VerticalId = 'npl' | 'reo' | 'cesion_remate' | 'producto_ocupado' | 'propiedades_inversion' | 'fondo'
 

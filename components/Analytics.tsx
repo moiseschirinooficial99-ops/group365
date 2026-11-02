@@ -1,5 +1,7 @@
 'use client'
+import { useEffect, useState } from 'react'
 import Script from 'next/script'
+import { getConsent, onConsentChange } from '@/lib/consent'
 
 // ═══════════════════════════════════════════════════════
 // PÍXELES DE CAMPAÑA — directo en group360iniciativas.com
@@ -20,6 +22,14 @@ const TIKTOK_PIXEL_ID = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
 
 export default function Analytics() {
+  // Los píxeles solo se cargan si el usuario acepta las cookies (CookieBanner).
+  const [granted, setGranted] = useState(false)
+  useEffect(() => {
+    setGranted(getConsent() === 'granted')
+    return onConsentChange(v => setGranted(v === 'granted'))
+  }, [])
+  if (!granted) return null
+
   return (
     <>
       {META_PIXEL_ID && (

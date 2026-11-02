@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { config, waLink } from '@/lib/config'
 
 export default function Privacidad() {
   return (
@@ -27,8 +28,11 @@ export default function Privacidad() {
         <h2 className="text-xl font-bold text-white mt-8 mb-4">Tus derechos</h2>
         <p className="mb-4">Puedes solicitar acceso, rectificación, eliminación, limitación u oposición al tratamiento de tus datos escribiendo a <span className="text-[#C9A84C]">info@group360iniciativas.com</span></p>
 
+        <h2 className="text-xl font-bold text-white mt-8 mb-4">Cookies</h2>
+        <p className="mb-4">Consulta qué cookies usamos y cómo gestionarlas en nuestra <Link href="/cookies" className="text-[#C9A84C] hover:underline">Política de cookies</Link>.</p>
+
         <h2 className="text-xl font-bold text-white mt-8 mb-4">Contacto</h2>
-        <p>GROUP 360 INICIATIVAS · España · WhatsApp: <a href="https://wa.me/34611251818" className="text-[#C9A84C] hover:underline">+34 611 25 18 18</a></p>
+        <p>GROUP 360 INICIATIVAS · España · WhatsApp: <a href={waLink()} className="text-[#C9A84C] hover:underline">{config.contacto.whatsappDisplay}</a></p>
       </div>
     </main>
   )

@@ -67,7 +67,9 @@ export default function Footer() {
             <li><Link href="/alquileres" className="hover:text-white transition-colors">Alquileres Turísticos</Link></li>
             <li><Link href="/inversores" className="hover:text-white transition-colors">Portal Inversores</Link></li>
             <li><Link href="/inversores/register" className="hover:text-white transition-colors">Registro Inversor</Link></li>
+            <li><Link href="/aviso-legal" className="hover:text-white transition-colors">Aviso Legal</Link></li>
             <li><Link href="/privacidad" className="hover:text-white transition-colors">Política de Privacidad</Link></li>
+            <li><Link href="/cookies" className="hover:text-white transition-colors">Política de Cookies</Link></li>
           </ul>
         </div>
 

@@ -19,7 +19,7 @@ import HoneypotField from '@/components/ui/HoneypotField'
 function CasosDeExito() {
   const [cases, setCases] = useState<any[]>([])
   useEffect(() => {
-    fetch('/api/properties?success=true')
+    fetch('/api/properties?success=true&view=card')
       .then(r => r.json())
       .then(d => setCases(Array.isArray(d) ? d : []))
       .catch(() => {})
@@ -79,7 +79,7 @@ function CasosDeExito() {
         <motion.div initial="hidden" whileInView="show" variants={FU} viewport={{ once: true }} className="text-center card p-8 border border-[#C9A84C]/15">
           <p className="text-white font-semibold text-lg mb-2">¿Tienes una propiedad similar?</p>
           <p className="text-[#8B96A5] text-sm mb-5">Cuéntanos y diseñamos juntos la estrategia de venta con visión 360°.</p>
-          <a href="https://wa.me/34611251818?text=Hola, tengo una propiedad que quiero vender. ¿Podéis ayudarme?"
+          <a href={`https://wa.me/${config.contacto.whatsapp}?text=Hola, tengo una propiedad que quiero vender. ¿Podéis ayudarme?`}
             target="_blank" rel="noopener noreferrer"
             className="btn-primary inline-flex items-center gap-2">
             Contactar por WhatsApp →
@@ -212,7 +212,7 @@ export default function HomePage() {
   const [totalActivos, setTotalActivos] = useState<number | null>(null)
 
   useEffect(() => {
-    fetch('/api/properties')
+    fetch('/api/properties?view=card')
       .then(r => r.json())
       .then((data: any[]) => {
         if (Array.isArray(data) && data.length > 0) {
@@ -556,13 +556,13 @@ export default function HomePage() {
               <Link href="/inversores" className="btn-primary inline-flex items-center gap-2 text-sm">
                 Saber más <ArrowRight size={14} />
               </Link>
-              <a href="tel:+34611251818" className="flex items-center gap-3 group">
+              <a href={`tel:+${config.contacto.whatsapp}`} className="flex items-center gap-3 group">
                 <div className="w-10 h-10 rounded-full bg-[#C9A84C]/8 border border-[#C9A84C]/20 flex items-center justify-center">
                   <Phone size={14} className="text-[#C9A84C]" />
                 </div>
                 <div>
                   <div className="text-[10px] text-[#8B96A5] uppercase tracking-widest">Llámanos</div>
-                  <div className="text-sm text-white font-medium group-hover:text-[#C9A84C] transition-colors">+34 611 25 18 18</div>
+                  <div className="text-sm text-white font-medium group-hover:text-[#C9A84C] transition-colors">{config.contacto.whatsappDisplay}</div>
                 </div>
               </a>
             </motion.div>
@@ -771,7 +771,7 @@ export default function HomePage() {
                 </div>
                 <div>
                   <label className="text-xs text-[#8B96A5] block mb-1.5">Teléfono</label>
-                  <input className="input" type="tel" placeholder="+34 611 25 18 18"
+                  <input className="input" type="tel" placeholder="+34 600 000 000"
                     value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
                 </div>
                 <div>
