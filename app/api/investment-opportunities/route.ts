@@ -6,6 +6,8 @@ import { isAdmin } from '@/lib/adminAuth'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 
+export const maxDuration = 60 // enviar el WhatsApp a todos los inversores lleva unos segundos
+
 // Las oportunidades privadas (is_public = false) son solo para el equipo y
 // para inversores con sesión iniciada en el portal. Antes la API las
 // devolvía a cualquiera que la llamara.
@@ -68,7 +70,9 @@ export async function POST(req: NextRequest) {
     if (error) throw error
 
     if (notify_investors && data?.is_public) {
-      notifyNewOpportunity(data).catch(() => {})
+      // Se espera al envío: en Vercel una promesa suelta puede cortarse al
+      // devolver la respuesta y los inversores se quedaban sin WhatsApp.
+      await notifyNewOpportunity(data).catch(e => console.error('Aviso inversores:', e?.message))
     } else {
       await sendTelegramNotification(
         `✅ <b>Nueva oportunidad publicada</b>\n\n📂 ${data.category?.toUpperCase()}\n🏠 ${data.title}\n📍 ${data.location || '-'}\n📊 ROI: ${data.roi_estimated || data.annual_return_pct || '-'}%`
