@@ -6,6 +6,7 @@
 //    se puede enseñar al usuario.
 
 import { trackLead } from '@/lib/consent'
+import { getAttributionText } from '@/lib/attribution'
 
 const HONEYPOT_FIELD = 'website'
 
@@ -14,7 +15,12 @@ export async function sendLead(
   form?: HTMLFormElement | null,
 ): Promise<void> {
   const trap = form?.elements.namedItem(HONEYPOT_FIELD) as HTMLInputElement | null
-  const body = JSON.stringify({ ...payload, ...(trap?.value ? { [HONEYPOT_FIELD]: trap.value } : {}) })
+  const campaign = getAttributionText()
+  const body = JSON.stringify({
+    ...payload,
+    ...(campaign ? { campaign } : {}),
+    ...(trap?.value ? { [HONEYPOT_FIELD]: trap.value } : {}),
+  })
 
   let res: Response | null = null
   for (let attempt = 0; attempt < 2 && !res; attempt++) {

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { config } from '@/lib/config'
 import Analytics from '@/components/Analytics'
 import CookieBanner from '@/components/CookieBanner'
+import AttributionCapture from '@/components/AttributionCapture'
 import './globals.css'
 
 const SITE = 'https://www.group360iniciativas.com'
@@ -105,6 +106,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <Analytics />
+        <AttributionCapture />
         <CookieBanner />
         {children}
       </body>

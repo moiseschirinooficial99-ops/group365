@@ -21,3 +21,9 @@
 - Fix: al publicar una oportunidad con "avisar a inversores", el envío de WhatsApp ahora se espera (antes era una promesa suelta que Vercel podía cortar).
 - Probado: extracción de fotos con PDF de prueba (2/2 fotos buenas; descarta logo, CMYK y duplicada). `next build` OK. La lectura con IA solo se puede probar en producción/preview.
 - WhatsApp: el 611 sigue Conectado; Meta envía al webhook pero respondemos 401 porque `META_APP_SECRET` en Vercel no coincide con la app 968681136164152. Pendiente que Moisés la actualice.
+
+## 2026-11-02 — Bot conversacional + base para campañas (PR #10)
+- Bot WhatsApp: saludo humano primero, mensajes de 1-3 frases, una pregunta por mensaje, captación paso a paso (nombre → qué busca → zona → presupuesto/plazo → llamada). Regla de seguridad: nunca códigos SMS ni portabilidades. max_tokens 500 → 350.
+- Anuncios "clic a WhatsApp" de Meta: el `referral` del primer mensaje crea el lead con source `anuncio_meta_whatsapp` + titular/ID del anuncio, aviso por Telegram y la IA conecta con lo que ofrecía el anuncio.
+- Web: `lib/attribution.ts` guarda UTM + clic de anuncio (fbclid/gclid) 30 días; todos los formularios (sendLead) y el registro de inversores mandan "Origen campaña" al CRM.
+- Píxel de Meta: el código ya existe (Analytics + trackLead); falta NEXT_PUBLIC_META_PIXEL_ID.
