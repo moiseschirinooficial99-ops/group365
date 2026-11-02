@@ -2,6 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { sendTelegramNotification } from '@/lib/notifications'
 import { notifyNewOpportunity } from '@/lib/notifyInvestors'
+import { isAdmin } from '@/lib/adminAuth'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+
+// Las oportunidades privadas (is_public = false) son solo para el equipo y
+// para inversores con sesión iniciada en el portal. Antes la API las
+// devolvía a cualquiera que la llamara.
+async function canSeePrivate(req: NextRequest): Promise<boolean> {
+  if (isAdmin(req)) return true
+  try {
+    const supabase = createRouteHandlerClient({ cookies })
+    const { data: { session } } = await supabase.auth.getSession()
+    return !!session
+  } catch {
+    return false
+  }
+}
 
 export async function GET(req: NextRequest) {
   const sp = new URL(req.url).searchParams
@@ -9,17 +26,20 @@ export async function GET(req: NextRequest) {
   const isPublic = sp.get('is_public')
   const status = sp.get('status')
   const id = sp.get('id')
+  const privateOk = await canSeePrivate(req)
 
   if (id) {
-    const { data } = await supabaseAdmin.from('investment_opportunities').select('*').eq('id', id).single()
+    let one = supabaseAdmin.from('investment_opportunities').select('*').eq('id', id)
+    if (!privateOk) one = one.eq('is_public', true)
+    const { data } = await one.maybeSingle()
     return NextResponse.json(data || null)
   }
 
   let query = supabaseAdmin.from('investment_opportunities').select('*')
 
   if (category) query = query.eq('category', category)
-  if (isPublic === 'true') query = query.eq('is_public', true)
-  if (isPublic === 'false') query = query.eq('is_public', false)
+  if (!privateOk || isPublic === 'true') query = query.eq('is_public', true)
+  else if (isPublic === 'false') query = query.eq('is_public', false)
   if (status) query = query.eq('status', status)
 
   const { data, error } = await query.order('created_at', { ascending: false })

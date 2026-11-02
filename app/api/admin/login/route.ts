@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { safeEqual } from '@/lib/adminAuth'
+import { rateLimited, clientIp } from '@/lib/leadInput'
 
 export async function POST(req: NextRequest) {
-  const { password } = await req.json()
+  // Máx. 8 intentos cada 15 min por IP: corta los ataques de fuerza bruta.
+  if (rateLimited(`login:${clientIp(req.headers)}`, 8, 15 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Demasiados intentos. Espera 15 minutos.' }, { status: 429 })
+  }
+
+  const { password } = await req.json().catch(() => ({ password: '' }))
   const secret = process.env.ADMIN_SECRET
 
   if (!secret) {
     return NextResponse.json({ error: 'ADMIN_SECRET not configured' }, { status: 500 })
   }
 
-  if (password !== secret) {
+  if (!safeEqual(password, secret)) {
+    await new Promise(r => setTimeout(r, 600))
     return NextResponse.json({ error: 'Contraseña incorrecta' }, { status: 401 })
   }
 

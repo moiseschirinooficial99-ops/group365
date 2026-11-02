@@ -12,6 +12,8 @@ import Footer from '@/components/layout/Footer'
 import PropertyCard from '@/components/cards/PropertyCard'
 import Logo3D from '@/components/Logo3D'
 import { config, waLink } from '@/lib/config'
+import { sendLead } from '@/lib/sendLead'
+import HoneypotField from '@/components/ui/HoneypotField'
 
 /* ─── Casos de Éxito ─── */
 function CasosDeExito() {
@@ -200,6 +202,7 @@ const MOTIVOS = [
 export default function HomePage() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', subject: 'vendedor', message: '' })
   const [sent, setSent] = useState(false)
+  const [sendError, setSendError] = useState('')
   const [loading, setLoading] = useState(false)
   const [testIdx, setTestIdx] = useState(0)
   const [featuredProps, setFeaturedProps] = useState<any[]>([])
@@ -231,13 +234,13 @@ export default function HomePage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setSendError('')
     try {
-      await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, type: form.subject, source: 'landing' }),
-      })
+      const { subject, ...rest } = form
+      await sendLead({ ...rest, type: subject, source: 'landing' }, e.currentTarget as HTMLFormElement)
       setSent(true)
+    } catch (err: any) {
+      setSendError(err.message)
     } finally { setLoading(false) }
   }
 
@@ -752,7 +755,8 @@ export default function HomePage() {
                 <p className="text-[#8B96A5]">Te contactamos en menos de 2 horas.</p>
               </motion.div>
             ) : (
-              <form onSubmit={submit} className="card p-8 space-y-4">
+              <form onSubmit={submit} className="card p-8 space-y-4 relative">
+                <HoneypotField />
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs text-[#8B96A5] block mb-1.5">Nombre</label>
@@ -782,6 +786,9 @@ export default function HomePage() {
                   <textarea className="input min-h-[96px] resize-none" placeholder="Cuéntanos más sobre lo que buscas..."
                     value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} />
                 </div>
+                {sendError && (
+                  <p role="alert" className="text-sm text-red-400">{sendError}</p>
+                )}
                 <button type="submit" disabled={loading}
                   className="btn-primary w-full py-4 tracking-wide inline-flex items-center justify-center gap-2">
                   {loading ? 'Enviando...' : <><span>Enviar Mensaje</span><ArrowRight size={15} /></>}

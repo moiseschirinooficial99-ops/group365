@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { notifyPropertyPublished } from '@/lib/notifications'
-import { isAdminChat } from '@/lib/adminAuth'
+import { isAdminChat, safeEqual } from '@/lib/adminAuth'
 import { crearCita, parseFechaMadrid, fmtFecha, KIND_LABEL } from '@/lib/citas'
 import { guardarDocumento, esTipoSoportado, resumenFiscal, rangoTrimestre } from '@/lib/contabilidad'
 
@@ -51,6 +51,13 @@ function parsePipeSeparated(caption: string): Record<string, any> | null {
 }
 
 export async function POST(req: NextRequest) {
+  // Si TELEGRAM_WEBHOOK_SECRET está puesto (y registrado en setWebhook con
+  // secret_token), solo aceptamos peticiones que traigan esa cabecera:
+  // así nadie puede hacerse pasar por Telegram aunque conozca el chat id.
+  const tgSecret = process.env.TELEGRAM_WEBHOOK_SECRET
+  if (tgSecret && !safeEqual(req.headers.get('x-telegram-bot-api-secret-token'), tgSecret)) {
+    return NextResponse.json({ ok: true })
+  }
   try {
     const body = await req.json()
     const message = body.message
