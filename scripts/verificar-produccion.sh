@@ -34,7 +34,10 @@ fi
 echo "── Rendimiento API"
 sz=$(curl -s -o /dev/null -w "%{size_download}" "$B/api/properties?view=card")
 [ "$sz" -lt 300000 ] && pass "Catálogo ligero ($((sz/1024)) KB)" || fail "Catálogo pesado" "$((sz/1024)) KB"
-curl -sI "$B/api/properties?view=card" | grep -qi "s-maxage" && pass "Catálogo cacheado en CDN" || fail "Catálogo sin caché" "falta Cache-Control"
+# Vercel se queda el s-maxage y no lo muestra; lo fiable es X-Vercel-Cache.
+curl -s -o /dev/null "$B/api/properties?view=card"
+vc=$(curl -s -D - -o /dev/null "$B/api/properties?view=card" | grep -i "^x-vercel-cache" | awk '{print $2}' | tr -d '')
+case "$vc" in HIT|STALE|PRERENDER) pass "Catálogo cacheado en CDN ($vc)";; *) fail "Catálogo sin caché" "X-Vercel-Cache: ${vc:-ninguna}";; esac
 
 echo "── Seguridad"
 expect "Lead sin contacto rechazado" 400 -X POST "$B/api/leads" -H 'Content-Type: application/json' -d '{"name":"verificacion"}'
