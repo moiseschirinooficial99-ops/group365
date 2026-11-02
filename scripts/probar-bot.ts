@@ -13,7 +13,7 @@
 // ═══════════════════════════════════════════════════════
 import fs from 'node:fs'
 import { callAnthropic } from '../app/api/anthropic'
-import { buildSystemPrompt } from '../lib/botPrompt'
+import { buildSystemPrompt, toWhatsAppFormat } from '../lib/botPrompt'
 import { BOT_STYLES, styleFor } from '../lib/botKnowledge'
 
 // Solo se lee ANTHROPIC_API_KEY del .env.local (nunca se imprime)
@@ -64,7 +64,7 @@ async function simular(c: Cliente, estiloForzado?: string) {
       isNewContact: turno === 0,
       adRef: turno === 0 ? c.anuncio : null,
     })
-    const respuesta = await callAnthropic([{ role: 'system', content: system }, ...historial], MODEL, 350)
+    const respuesta = toWhatsAppFormat(await callAnthropic([{ role: 'system', content: system }, ...historial], MODEL, 320))
     historial.push({ role: 'assistant', content: respuesta })
     salida.push(`🤖 Alejandro: ${respuesta}`)
 
@@ -79,7 +79,7 @@ async function simular(c: Cliente, estiloForzado?: string) {
   const bot = historial.filter(m => m.role === 'assistant').map(m => m.content)
   const palabras = Math.round(bot.reduce((a, t) => a + t.split(/\s+/).length, 0) / bot.length)
   const preguntas = (bot.reduce((a, t) => a + (t.match(/\?/g) || []).length, 0) / bot.length).toFixed(1)
-  const prohibidas = bot.join(' ').match(/garantiz|riesgo cero|golden visa (est|sig)|c[óo]digo sms/gi) || []
+  const prohibidas = bot.join(' ').match(/(?<!(infra|sobre|no es) )garantizad|blindad|riesgo cero|sin riesgo|no pagas? (a )?abogados|\*\*|golden visa (est|sig)|c[óo]digo sms/gi) || []
   salida.push(`\n📊 Media ${palabras} palabras/mensaje · ${preguntas} preguntas/mensaje · avisos: ${prohibidas.length ? prohibidas.join(', ') : 'ninguno'}`)
   return { texto: salida.join('\n'), palabras, preguntas: Number(preguntas), avisos: prohibidas.length }
 }

@@ -95,7 +95,7 @@ export const BOT_STYLES: BotStyle[] = [
   {
     id: 'C',
     nombre: 'Historias y casos reales',
-    instrucciones: 'ESTILO DE ESTA CONVERSACIÓN — "Historias y casos reales": conecta con ejemplos breves de operaciones parecidas (usa solo los casos y cifras que aparecen en este prompt; nunca inventes clientes ni datos). Una historia corta cada vez y después una pregunta sobre su caso.',
+    instrucciones: 'ESTILO DE ESTA CONVERSACIÓN — "Historias y casos reales": conecta con ejemplos breves de operaciones parecidas (usa solo los casos y cifras que aparecen en este prompt; nunca inventes clientes ni datos). Una historia corta cada vez (2-3 frases como mucho) y después una pregunta sobre su caso.',
   },
 ]
 
