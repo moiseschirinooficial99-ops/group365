@@ -27,3 +27,10 @@
 - Anuncios "clic a WhatsApp" de Meta: el `referral` del primer mensaje crea el lead con source `anuncio_meta_whatsapp` + titular/ID del anuncio, aviso por Telegram y la IA conecta con lo que ofrecía el anuncio.
 - Web: `lib/attribution.ts` guarda UTM + clic de anuncio (fbclid/gclid) 30 días; todos los formularios (sendLead) y el registro de inversores mandan "Origen campaña" al CRM.
 - Píxel de Meta: el código ya existe (Analytics + trackLead); falta NEXT_PUBLIC_META_PIXEL_ID.
+
+## 2026-11-02 — Bot: conocimiento inmobiliario, estilos A/B/C y simulador
+- `lib/botKnowledge.ts`: conocimiento del sector (compra, arras, gastos, ITP Cataluña por tramos, Golden Visa eliminada, licencias HUT y Decreto-ley 3/2023 con caducidad nov-2028, Registro Único de alquiler corto desde jul-2025, zonas Costa Dorada, técnica comercial y persuasión honesta). Revisar cada trimestre.
+- Estilos en prueba: A consultivo, B directo, C historias. Cada teléfono tiene siempre el mismo (hash del número). Comparativa: `GET /api/admin/bot-estilos?dias=30` (conversaciones, enganchados, con nombre, citas, ganados).
+- Prompt sacado a `lib/botPrompt.ts` (lo comparten webhook y simulador). Quitado "riesgo cero" y rentabilidades como promesa.
+- Simulador: `npx tsx scripts/probar-bot.ts [A|B|C] [cliente]` → 6 clientes ficticios conversan con el bot; transcripción en `pruebas-bot/` (gitignored).
+- Producción: PR #9 y #10 ya mergeados y desplegados (ruta de documentos responde 401 sin sesión = OK).
