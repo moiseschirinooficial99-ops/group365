@@ -506,7 +506,7 @@ ROI estimado: ${p.estimated_roi || p.roi_percentage ? (p.estimated_roi || p.roi_
       reply = `Hola! Soy el asistente de GROUP 360 INICIATIVAS. 🏠\n\nUn especialista te contactará pronto.\n\nMás info: https://group360iniciativas.com`
     } else {
       try {
-        reply = toWhatsAppFormat(await callAnthropic(conversationMessages, 'claude-haiku-4-5-20251001', 250))
+        reply = toWhatsAppFormat(await callAnthropic(conversationMessages, 'claude-haiku-4-5-20251001', 320))
         console.log('WA AI reply:', reply.slice(0, 100))
       } catch (e: any) {
         console.error('WA: Anthropic error:', e.message)

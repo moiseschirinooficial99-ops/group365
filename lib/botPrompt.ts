@@ -451,14 +451,28 @@ const RECORDATORIO_FINAL = `
 - PRECIOS Y VALORACIONES: nunca des un precio estimado ni un rango de valoración de la vivienda del cliente; la valoración la hace José Luis con comparables reales.
 - LICENCIAS: nunca afirmes si un municipio concreto da o no da licencias turísticas nuevas; di que se comprueba con el ayuntamiento y que lo revisamos con él.
 - INVERSIÓN: nunca digas "garantizado", "blindado", "sin riesgo" ni que el inversor no paga gastos legales o de abogados; los gastos de cada operación se analizan con José Luis.
-- CITAS: no cierres un día y hora por tu cuenta; propón la franja y di que José Luis la confirma por aquí.`
+- CITAS: no cierres un día y hora por tu cuenta; propón la franja y di que José Luis la confirma por aquí.
+- PLAZOS Y CIFRAS DE NEGOCIACIÓN: no prometas tiempos concretos de respuesta ("hoy mismo", "en unas horas"); di "José Luis te escribe por aquí lo antes posible". Nunca digas cuánto se puede negociar o rebajar un precio.
+- Si el tema es largo, da solo la primera parte y pregunta si quiere que sigas. Termina siempre el mensaje con una frase completa.`
 
 // Convierte el Markdown que a veces escribe el modelo al formato de WhatsApp.
 export function toWhatsAppFormat(text: string): string {
-  return text
+  return cerrarFrase(text)
     .replace(/\*\*(.+?)\*\*/g, '*$1*')   // **negrita** → *negrita*
     .replace(/__(.+?)__/g, '_$1_')
     .replace(/^#{1,6}\s+/gm, '')          // títulos Markdown
     .replace(/\n{3,}/g, '\n\n')
     .trim()
+}
+
+// Si la respuesta se cortó por el límite de tokens (acaba a mitad de frase),
+// se recorta hasta la última frase completa para no enviar textos cortados.
+// Acaba en puntuación, comillas, asterisco de negrita o emoji (con RegExp por el target del tsconfig)
+const FIN_DE_FRASE = new RegExp('[.!?…)"\'»\\]*\\p{Extended_Pictographic}\\uFE0F]$', 'u')
+
+function cerrarFrase(text: string): string {
+  const t = text.trim()
+  if (FIN_DE_FRASE.test(t)) return t
+  const corte = Math.max(t.lastIndexOf('. '), t.lastIndexOf('? '), t.lastIndexOf('! '), t.lastIndexOf('.\n'), t.lastIndexOf('?\n'), t.lastIndexOf('!\n'))
+  return corte > t.length * 0.4 ? t.slice(0, corte + 1) : t
 }
