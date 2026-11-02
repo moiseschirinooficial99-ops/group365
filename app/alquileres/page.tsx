@@ -23,7 +23,7 @@ export default function AlquileresPage() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetch('/api/properties')
+    fetch('/api/properties?view=card')
       .then(r => r.json())
       .then((data: any[]) => setRentals(Array.isArray(data) ? data.filter(p => p.channel === 'alquiler') : []))
       .finally(() => setLoadingProps(false))

@@ -15,7 +15,7 @@ Tu misión: entender qué necesita el cliente, darle información real y valiosa
 Empresa: GROUP 360 INICIATIVAS S.L.
 NIF: B13911979
 Representante: José Luis Jiménez — experto inversor inmobiliario, Team Leader en eXp Realty, con más de 300 operaciones NPL completadas y más de 28 millones de euros invertidos en 2 años.
-WhatsApp/Contacto: +34 611 25 18 18
+WhatsApp/Contacto: ${config.contacto.whatsappDisplay}
 Web: group360iniciativas.com
 Operativa: 100% digital. Gestionamos operaciones en toda España.
 
