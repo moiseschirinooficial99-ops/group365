@@ -2,8 +2,9 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Upload, X, Loader2, Sparkles } from 'lucide-react'
+import { Upload, X, Loader2, Sparkles, FileText } from 'lucide-react'
 import Link from 'next/link'
+import { uploadAndAnalyze } from '@/lib/uploadDocument'
 
 const TIPOS = ['venta', 'alquiler', 'bancaria']
 const CHANNELS = { venta: 'personal', alquiler: 'alquiler', bancaria: 'bancaria' }
@@ -18,6 +19,10 @@ export default function NuevaPropiedadPage() {
   const [error, setError] = useState('')
   const [previews, setPreviews] = useState<string[]>([])
   const [files, setFiles] = useState<File[]>([])
+  // Fotos sacadas del PDF por la IA (ya subidas: son URLs públicas)
+  const [docImages, setDocImages] = useState<string[]>([])
+  const [docLoading, setDocLoading] = useState(false)
+  const [docNote, setDocNote] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     tipo: 'venta',
@@ -50,6 +55,45 @@ export default function NuevaPropiedadPage() {
   const removeFile = (i: number) => {
     setFiles(prev => prev.filter((_, idx) => idx !== i))
     setPreviews(prev => prev.filter((_, idx) => idx !== i))
+  }
+
+  // Subir el PDF de la ficha: la IA rellena los campos y extrae las fotos
+  const handleDocument = async (file: File | undefined) => {
+    if (!file) return
+    setDocLoading(true)
+    setDocNote(null)
+    setError('')
+    try {
+      const { fields: x, images, isPdf } = await uploadAndAnalyze(file, 'property')
+      setDocImages(prev => [...prev, ...images])
+      if (!x) {
+        setDocNote(`La IA no pudo leer el documento.${images.length ? ` Se añadieron ${images.length} foto(s).` : ''} Rellena los campos a mano.`)
+        return
+      }
+      const s = (v: any) => (v === null || v === undefined ? '' : String(v))
+      setForm(f => ({
+        ...f,
+        tipo: x.tipo || f.tipo,
+        title: x.title || f.title,
+        location: x.location || f.location,
+        price: s(x.price) || f.price,
+        area_sqm: s(x.area_sqm) || f.area_sqm,
+        plot_m2: s(x.plot_m2) || f.plot_m2,
+        bedrooms: s(x.bedrooms) || f.bedrooms,
+        bathrooms: s(x.bathrooms) || f.bathrooms,
+        estimated_roi: s(x.estimated_roi) || f.estimated_roi,
+        price_per_night: s(x.price_per_night) || f.price_per_night,
+        description: x.description || f.description,
+      }))
+      const fotos = isPdf
+        ? (images.length ? ` Se han sacado ${images.length} foto(s) del PDF.` : ' El PDF no traía fotos aprovechables: súbelas abajo.')
+        : ' La imagen se añadió a las fotos.'
+      setDocNote(`✓ Ficha leída.${fotos} Revisa los datos y pulsa Publicar.`)
+    } catch (e: any) {
+      setDocNote('Error leyendo el documento: ' + e.message)
+    } finally {
+      setDocLoading(false)
+    }
   }
 
   const generateDescription = async () => {
@@ -103,7 +147,7 @@ export default function NuevaPropiedadPage() {
       }
 
       // Upload images
-      const imageUrls: string[] = []
+      const imageUrls: string[] = [...docImages]
       for (const file of files) {
         const fd = new FormData()
         fd.append('file', file)
@@ -218,6 +262,27 @@ export default function NuevaPropiedadPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
 
+          {/* Rellenar desde PDF con IA */}
+          <div className="rounded-xl border border-[#C9A84C]/25 bg-[#C9A84C]/5 p-5">
+            <div className="flex items-center gap-2 mb-1.5">
+              <Sparkles size={15} className="text-[#C9A84C]" />
+              <span className="text-sm font-semibold text-[#C9A84C]">Rellenar desde PDF con IA</span>
+            </div>
+            <p className="text-xs text-[#8B96A5] mb-3">
+              Sube la ficha o el dossier del inmueble (PDF o foto): la IA rellena los datos y añade las fotos que trae el PDF. Tú revisas y publicas.
+            </p>
+            <label className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
+              docLoading ? 'bg-[#C9A84C]/20 text-[#C9A84C] cursor-wait' : 'bg-[#C9A84C] text-[#0F1419] hover:opacity-90'
+            }`}>
+              {docLoading
+                ? <><Loader2 size={15} className="animate-spin" /> Leyendo ficha...</>
+                : <><FileText size={15} /> Subir PDF de la propiedad</>}
+              <input type="file" accept="application/pdf,image/*" className="hidden" disabled={docLoading}
+                onChange={e => { handleDocument(e.target.files?.[0]); e.currentTarget.value = '' }} />
+            </label>
+            {docNote && <p className="text-xs mt-2.5 text-[#8B96A5]">{docNote}</p>}
+          </div>
+
           {/* Tipo */}
           <div className="card p-5">
             <label className="text-xs text-[#8B96A5] block mb-3 uppercase tracking-wider">Tipo de propiedad</label>
@@ -238,8 +303,18 @@ export default function NuevaPropiedadPage() {
           {/* Fotos */}
           <div className="card p-5">
             <label className="text-xs text-[#8B96A5] block mb-3 uppercase tracking-wider">Fotos</label>
-            {previews.length > 0 && (
+            {(docImages.length > 0 || previews.length > 0) && (
               <div className="grid grid-cols-3 gap-2 mb-3">
+                {docImages.map(src => (
+                  <div key={src} className="relative aspect-video rounded-lg overflow-hidden">
+                    <img src={src} alt="" className="w-full h-full object-cover" />
+                    <span className="absolute bottom-1 left-1 text-[9px] px-1.5 py-0.5 rounded bg-black/70 text-[#C9A84C]">PDF</span>
+                    <button type="button" onClick={() => setDocImages(prev => prev.filter(u => u !== src))}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center hover:bg-red-600 transition-colors">
+                      <X size={10} className="text-white" />
+                    </button>
+                  </div>
+                ))}
                 {previews.map((src, i) => (
                   <div key={i} className="relative aspect-video rounded-lg overflow-hidden">
                     <img src={src} alt="" className="w-full h-full object-cover" />

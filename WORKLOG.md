@@ -13,3 +13,11 @@
 - Scoring premia Madrid/Marbella en vez de Costa Dorada; sitemap sin fichas /propiedades/[id]; el bot ignora audios e imágenes.
 - Cambio de número de WhatsApp en marcha: abiertos WhatsApp Manager (WABA 1747480553348187) y la app de Meta (968681136164152).
 - Revisión web pública (añadida al informe, 3.7–3.11): el form de la home marca "enviado" aunque falle (no mira res.ok); /propiedades/[id] es client component y descarga /api/properties entero (887 KB, 218 props) para mostrar una → sin SEO por ficha ni og:image propia; claims "garantizado"; testimonios de Madrid; faltan /aviso-legal, /cookies y banner de consentimiento; 207/218 props son de eXp y 0 vendidas (casos de éxito vacíos). El número de WhatsApp está centralizado en lib/config.ts (contacto.whatsapp).
+
+## 2026-11-02 — PDF → oportunidad/propiedad con IA
+- Panel: en **Oportunidades** y **Nueva propiedad** se sube un PDF (o foto). Claude (opus-5-5) rellena los campos y las fotos JPEG que trae el PDF se extraen con pdf-lib y se suben solas a `property-images`.
+- El PDF va directo a Supabase con URL firmada (bucket privado `property-docs`, se crea solo, máx. 20 MB): así se salta el límite de 4,5 MB de Vercel.
+- Rutas nuevas: `/api/admin/documents/upload-url` y `/api/admin/documents/analyze`. Lógica en `lib/documentAnalyzer.ts`; cliente en `lib/uploadDocument.ts`.
+- Fix: al publicar una oportunidad con "avisar a inversores", el envío de WhatsApp ahora se espera (antes era una promesa suelta que Vercel podía cortar).
+- Probado: extracción de fotos con PDF de prueba (2/2 fotos buenas; descarta logo, CMYK y duplicada). `next build` OK. La lectura con IA solo se puede probar en producción/preview.
+- WhatsApp: el 611 sigue Conectado; Meta envía al webhook pero respondemos 401 porque `META_APP_SECRET` en Vercel no coincide con la app 968681136164152. Pendiente que Moisés la actualice.
