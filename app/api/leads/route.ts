@@ -3,22 +3,39 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { isAdmin, unauthorized } from '@/lib/adminAuth'
 import { scoreLead } from '@/lib/scoring'
 import { notifyNewLead, notifyHotLead } from '@/lib/notifications'
+import { parseLead, isHoneypotHit, isPrivateInvestorSource, rateLimited, clientIp } from '@/lib/leadInput'
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const { score, redirect } = scoreLead(body)
+    let body: Record<string, unknown>
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Datos no válidos' }, { status: 400 })
+    }
+
+    // Bot que rellena el campo trampa: le decimos "ok" y no guardamos nada.
+    if (isHoneypotHit(body)) return NextResponse.json({ ok: true })
+
+    if (rateLimited(`lead:${clientIp(req.headers)}`)) {
+      return NextResponse.json({ error: 'Demasiados envíos. Inténtalo en unos minutos.' }, { status: 429 })
+    }
+
+    const parsed = parseLead(body)
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
+    const input = parsed.lead
+
+    let { score, redirect } = scoreLead(input)
+    if (isPrivateInvestorSource(input.source)) score = Math.max(score, 90)
 
     const { data: lead, error } = await supabaseAdmin
       .from('leads')
-      .insert({ ...body, scoring_result: score, redirect_type: redirect, status: 'new' })
+      .insert({ ...input, scoring_result: score, redirect_type: redirect, status: 'new' })
       .select().single()
 
     if (error) throw error
 
     // Notifications (non-blocking)
-    notifyNewLead({ ...body, scoring_result: score }).catch(() => {})
-    if (score > 70) notifyHotLead({ ...body, scoring_result: score }).catch(() => {})
+    notifyNewLead({ ...input, scoring_result: score }).catch(() => {})
+    if (score > 70) notifyHotLead({ ...input, scoring_result: score }).catch(() => {})
 
     // n8n webhook (non-blocking)
     const n8nUrl = process.env.N8N_WEBHOOK_URL

@@ -2,9 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { sendTelegramNotification } from '@/lib/notifications'
 import { WA_GRAPH_VERSION } from '@/lib/config'
+import { isAdmin, unauthorized } from '@/lib/adminAuth'
 
 // Exchanges current token for a new 60-day long-lived token and stores in Supabase
+// La llama el cron de Vercel (manda `Authorization: Bearer <CRON_SECRET>`)
+// o el panel. Antes cualquiera podía lanzarla desde fuera.
+function isCron(req: NextRequest) {
+  const s = process.env.CRON_SECRET
+  return !!s && req.headers.get('authorization') === `Bearer ${s}`
+}
+
 export async function GET(req: NextRequest) {
+  if (!isCron(req) && !isAdmin(req)) return unauthorized()
   const appId = process.env.META_APP_ID
   const appSecret = process.env.META_APP_SECRET
   const currentToken = process.env.WHATSAPP_TOKEN

@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { callAnthropic } from '@/app/api/anthropic'
 import { sendTelegramNotification } from '@/lib/notifications'
 import { config, WA_GRAPH_VERSION } from '@/lib/config'
+import { safeEqual } from '@/lib/adminAuth'
 
 const SYSTEM_PROMPT = `Eres Alejandro, el asistente virtual de GROUP 360 INICIATIVAS S.L.
 Eres cercano, profesional, directo y conoces en profundidad el mundo de la inversión inmobiliaria, las hipotecas impagadas (NPL) y el alquiler vacacional en la Costa Dorada.
@@ -592,10 +593,35 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 }
 
+// Meta firma cada aviso con la clave de la app (cabecera X-Hub-Signature-256).
+// Sin esta comprobación cualquiera podía mandar mensajes falsos al bot
+// (leads inventados, gasto de IA, avisos falsos por Telegram).
+// Vía de escape temporal: WHATSAPP_SKIP_SIGNATURE=1 en Vercel.
+async function validSignature(raw: string, header: string | null): Promise<boolean> {
+  const secret = process.env.META_APP_SECRET
+  if (process.env.WHATSAPP_SKIP_SIGNATURE === '1') return true
+  if (!secret) {
+    console.warn('WA: META_APP_SECRET no configurado — firma sin comprobar')
+    return true
+  }
+  if (!header?.startsWith('sha256=')) return false
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+  )
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(raw))
+  const hex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('')
+  return safeEqual(hex, header.slice(7))
+}
+
 export async function POST(req: NextRequest) {
   let rawBody: any
+  const rawText = await req.text().catch(() => '')
+  if (!(await validSignature(rawText, req.headers.get('x-hub-signature-256')))) {
+    console.error('WA: firma no válida — petición rechazada')
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+  }
   try {
-    rawBody = await req.json()
+    rawBody = JSON.parse(rawText)
   } catch {
     return NextResponse.json({ ok: true })
   }
@@ -630,6 +656,20 @@ export async function POST(req: NextRequest) {
     const from = msg.from
     const text = (msg.text?.body || '').trim()
     console.log('WA MESSAGE from', from, ':', text)
+
+    // Meta reintenta el aviso si tardamos en contestar: si este mensaje ya
+    // está guardado, no lo procesamos otra vez (evita respuestas dobles).
+    if (msg.id) {
+      const { count: dup } = await supabaseAdmin
+        .from('wa_conversations')
+        .select('id', { count: 'exact', head: true })
+        .eq('wa_message_id', msg.id)
+        .eq('direction', 'inbound')
+      if ((dup || 0) > 0) {
+        console.log('WA: duplicado ignorado', msg.id)
+        return NextResponse.json({ ok: true })
+      }
+    }
 
     // Detectar si es primer contacto de este número
     const { count: prevCount } = await supabaseAdmin

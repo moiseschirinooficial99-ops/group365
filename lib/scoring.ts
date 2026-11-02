@@ -1,3 +1,5 @@
+import { config } from '@/lib/config'
+
 export function scoreLead(lead: {
   budget_max?: number
   preferred_zone?: string
@@ -12,7 +14,9 @@ export function scoreLead(lead: {
   else if (budget > 350000) score += 22
   else score += 8
 
-  const topZones = ['madrid', 'barcelona', 'marbella', 'costa del sol', 'valencia', 'alicante']
+  // Mercado principal de GROUP 360: Costa Dorada (antes puntuaba Madrid,
+  // Marbella… y los leads de la zona real salían como fríos).
+  const topZones = ['costa dorada', 'costa daurada', ...config.zonasCostaDorada.map(z => z.toLowerCase())]
   if (lead.preferred_zone) {
     const zone = lead.preferred_zone.toLowerCase()
     if (topZones.some(z => zone.includes(z))) score += 25

@@ -4,6 +4,8 @@ import { motion } from 'framer-motion'
 import { MapPin } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
+import { sendLead } from '@/lib/sendLead'
+import HoneypotField from '@/components/ui/HoneypotField'
 import PropertyCard from '@/components/cards/PropertyCard'
 
 const FADE_UP = {
@@ -17,6 +19,7 @@ export default function AlquileresPage() {
   const [loadingProps, setLoadingProps] = useState(true)
   const [form, setForm] = useState({ name: '', email: '', phone: '', guests: '', dates: '' })
   const [sent, setSent] = useState(false)
+  const [sendError, setSendError] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -57,13 +60,16 @@ export default function AlquileresPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setSendError('')
     try {
-      await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, source: 'alquileres', message: `Alquiler: ${form.guests} personas, fechas: ${form.dates}` }),
-      })
+      await sendLead({
+        name: form.name, email: form.email, phone: form.phone,
+        type: 'alquiler', source: 'alquileres',
+        message: `Alquiler: ${form.guests || '?'} personas, fechas: ${form.dates || 'sin indicar'}`,
+      }, e.currentTarget as HTMLFormElement)
       setSent(true)
+    } catch (err: any) {
+      setSendError(err.message)
     } finally {
       setLoading(false)
     }
@@ -147,7 +153,8 @@ export default function AlquileresPage() {
                 <p className="text-[#8B96A5]">Te contactamos en menos de 2 horas.</p>
               </div>
             ) : (
-              <form onSubmit={submit} className="card p-8 space-y-4">
+              <form onSubmit={submit} className="card p-8 space-y-4 relative">
+                <HoneypotField />
                 <input className="input" placeholder="Tu nombre" required
                   value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
                 <input className="input" type="email" placeholder="Email" required
@@ -158,6 +165,7 @@ export default function AlquileresPage() {
                   value={form.guests} onChange={e => setForm({ ...form, guests: e.target.value })} />
                 <input className="input" placeholder="Check-in / Check-out (ej: 15-22 agosto)"
                   value={form.dates} onChange={e => setForm({ ...form, dates: e.target.value })} />
+                {sendError && <p role="alert" className="text-sm text-red-400">{sendError}</p>}
                 <button type="submit" disabled={loading} className="btn-primary w-full py-4">
                   {loading ? 'Enviando...' : 'Solicitar disponibilidad →'}
                 </button>

@@ -3,19 +3,23 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { config, waLink } from '@/lib/config'
+import { sendLead } from '@/lib/sendLead'
+import HoneypotField from '@/components/ui/HoneypotField'
 
 export default function Footer() {
   const [email, setEmail] = useState('')
   const [done, setDone] = useState(false)
+  const [error, setError] = useState('')
 
   const subscribe = async (e: React.FormEvent) => {
     e.preventDefault()
-    await fetch('/api/leads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, type: 'newsletter', source: 'footer' }),
-    })
-    setDone(true)
+    setError('')
+    try {
+      await sendLead({ email, type: 'newsletter', source: 'footer' }, e.currentTarget as HTMLFormElement)
+      setDone(true)
+    } catch (err: any) {
+      setError(err.message)
+    }
   }
 
   return (
@@ -39,7 +43,8 @@ export default function Footer() {
           {done ? (
             <p className="text-[#1B7F6F] text-sm">Suscrito. Te mantendremos informado.</p>
           ) : (
-            <form onSubmit={subscribe} className="flex gap-2">
+            <form onSubmit={subscribe} className="flex gap-2 relative">
+              <HoneypotField />
               <input
                 type="email" placeholder="Tu email" required value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -47,6 +52,9 @@ export default function Footer() {
               />
               <button type="submit" className="btn-primary text-xs px-4 py-2 shrink-0">Suscribir</button>
             </form>
+          )}
+          {error && !done && (
+            <p role="alert" className="text-xs text-red-400 mt-2">{error}</p>
           )}
         </div>
 
