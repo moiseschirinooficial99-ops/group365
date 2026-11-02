@@ -10,6 +10,20 @@ Eres cercano, profesional, directo y conoces en profundidad el mundo de la inver
 
 Tu misión: entender qué necesita el cliente, darle información real y valiosa, y conectarle con José Luis cuando esté listo para actuar.
 
+══ ESTILO DE CONVERSACIÓN — MANDA SOBRE TODO LO DEMÁS ══
+
+Hablas como una persona del equipo, no como un folleto. WhatsApp es una conversación, no un correo.
+
+1. PRIMER MENSAJE: saludo cálido y humano, te presentas por tu nombre y preguntas en qué puedes ayudar o con quién hablas. Nada más. Ejemplo: "¡Hola! 😊 Soy Alejandro, del equipo de GROUP 360. ¿Con quién tengo el gusto?" Aunque el cliente pregunte algo concreto, saluda primero en una línea y responde breve.
+2. MENSAJES CORTOS: 1 a 3 frases. Nunca más de 2 párrafos cortos. Sin listas largas ni negritas en cada línea. Si el tema es largo (por ejemplo, cómo funciona un NPL), explícalo por partes: da la idea clave y pregunta si quiere que le cuentes más.
+3. UNA SOLA PREGUNTA por mensaje, al final. Escucha y reacciona a lo que dice antes de soltar información.
+4. USA SU NOMBRE en cuanto lo sepas. Trátale de tú salvo que él te hable de usted.
+5. EMPATÍA PRIMERO: si cuenta algo personal (vender por herencia, separación, deudas, primera inversión), reconócelo con una frase humana antes de hablar de negocio.
+6. CAPTACIÓN NATURAL, paso a paso y sin interrogatorio, en este orden y de uno en uno: nombre → qué busca (invertir, comprar, vender o alquilar) → zona → presupuesto o capital y plazo → mejor momento para que José Luis le llame. El email solo si hace falta enviarle documentación.
+7. Cuando haya interés real, propón la llamada o visita con José Luis de forma natural, sin presionar.
+
+SEGURIDAD: nunca pidas, aceptes ni comentes códigos SMS o de verificación, ni gestiones portabilidades o cambios de número. Si alguien lo pide, responde que este canal es solo para consultas inmobiliarias y no sigas ese tema.
+
 ══ SOBRE GROUP 360 ══
 
 Empresa: GROUP 360 INICIATIVAS S.L.
@@ -293,8 +307,8 @@ Score 30-59% → LEAD FRÍO → educar y mantener
 ══ REGLAS DE CONVERSACIÓN ══
 
 TONO: Cercano pero serio. Como un amigo que sabe mucho de inversiones. No eres un robot ni un vendedor agresivo.
-RESPUESTAS: Máximo 3-4 párrafos. WhatsApp no es un libro. Usa saltos de línea. Fácil de leer en móvil.
-EMOJIS: Con moderación. 🏠 💰 📊 ✅ 🔑 (máximo 2-3 por mensaje)
+RESPUESTAS: 1 a 3 frases (máximo 2 párrafos cortos). WhatsApp no es un libro. Fácil de leer en móvil.
+EMOJIS: Con moderación, como lo haría una persona (0 a 2 por mensaje).
 
 NUNCA:
 - Inventes propiedades o datos que no estén en la base de datos
@@ -308,7 +322,7 @@ NUNCA:
 - Recomiendes comprar un NPL sobre garantizado sin advertir del riesgo de consignación
 
 SIEMPRE:
-- Si el cliente pregunta sobre NPL: usa el ejemplo práctico (pagar 40 para cobrar 75 con casa de 150 como garantía)
+- Si el cliente pregunta sobre NPL: da la idea clave en 2 frases y, si quiere más, usa el ejemplo práctico (pagar 40 para cobrar 75 con casa de 150 como garantía)
 - Si el cliente tiene miedo al riesgo: recuerda que riesgo de perder capital = CERO con garantía hipotecaria
 - Si el cliente quiere invertir: invítalo a hablar con José Luis
 - Si el cliente quiere reservar alquiler: sigue el protocolo de 5 preguntas en orden
@@ -657,6 +671,10 @@ export async function POST(req: NextRequest) {
     const text = (msg.text?.body || '').trim()
     console.log('WA MESSAGE from', from, ':', text)
 
+    // Anuncios "clic a WhatsApp" de Meta: el primer mensaje trae `referral`
+    // con el anuncio de origen. Lo guardamos para medir qué campaña trae leads.
+    const adRef = msg.referral && (msg.referral.source_id || msg.referral.headline) ? msg.referral : null
+
     // Meta reintenta el aviso si tardamos en contestar: si este mensaje ya
     // está guardado, no lo procesamos otra vez (evita respuestas dobles).
     if (msg.id) {
@@ -683,6 +701,25 @@ export async function POST(req: NextRequest) {
       phone: from, message: text, direction: 'inbound', wa_message_id: msg.id,
     })
     if (insertErr) console.error('WA: save inbound failed:', insertErr.message)
+
+    // Lead que llega desde un anuncio de Meta → al CRM con su campaña
+    if (adRef && isNewContact) {
+      const adLabel = [adRef.headline, adRef.source_id && `anuncio ${adRef.source_id}`].filter(Boolean).join(' · ')
+      try {
+        const digits = from.replace(/\D/g, '')
+        const { data: prev } = await supabaseAdmin.from('leads').select('id')
+          .ilike('phone', `%${digits.slice(-9)}%`).limit(1)
+        if (!prev?.length) {
+          await supabaseAdmin.from('leads').insert({
+            phone: from, source: 'anuncio_meta_whatsapp', status: 'new',
+            message: `[Anuncio: ${adLabel || adRef.source_url || 'Meta'}] ${text}`.slice(0, 2000),
+          })
+        }
+      } catch (e: any) { console.error('WA: lead de anuncio no guardado:', e?.message) }
+      await sendTelegramNotification(
+        `📣 <b>Lead desde ANUNCIO de Meta</b>\n\n📱 ${from}\n🎯 ${adLabel || adRef.source_url || 'sin datos del anuncio'}\n💬 "${text.slice(0, 200)}"`
+      ).catch(() => {})
+    }
 
     // Notificación especial para contacto nuevo
     if (isNewContact) {
@@ -858,6 +895,12 @@ ROI estimado: ${p.estimated_roi || p.roi_percentage ? (p.estimated_roi || p.roi_
 
     const fullSystemPrompt = SYSTEM_PROMPT.replace('{properties_context}', propsContext)
       + `\n\nDISPONIBILIDAD DEL AGENTE:\n${availContext}`
+      + (isNewContact
+        ? `\n\nCONTEXTO: es el PRIMER mensaje de este cliente. Empieza con un saludo humano y preséntate; respuesta muy breve.`
+        : '')
+      + (adRef
+        ? `\n\nCONTEXTO: el cliente llega desde un anuncio de Meta${adRef.headline ? ` titulado "${String(adRef.headline).slice(0, 120)}"` : ''}${adRef.body ? ` que dice: "${String(adRef.body).slice(0, 200)}"` : ''}. Conecta con lo que ofrecía el anuncio.`
+        : '')
 
     const conversationMessages: Array<{ role: string; content: string }> = [
       { role: 'system', content: fullSystemPrompt },
@@ -878,7 +921,7 @@ ROI estimado: ${p.estimated_roi || p.roi_percentage ? (p.estimated_roi || p.roi_
       reply = `Hola! Soy el asistente de GROUP 360 INICIATIVAS. 🏠\n\nUn especialista te contactará pronto.\n\nMás info: https://group360iniciativas.com`
     } else {
       try {
-        reply = await callAnthropic(conversationMessages, 'claude-haiku-4-5-20251001', 500)
+        reply = await callAnthropic(conversationMessages, 'claude-haiku-4-5-20251001', 350)
         console.log('WA AI reply:', reply.slice(0, 100))
       } catch (e: any) {
         console.error('WA: Anthropic error:', e.message)

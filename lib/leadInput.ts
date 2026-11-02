@@ -34,6 +34,7 @@ const EXTRA_LABELS: Record<string, string> = {
   subject: 'Asunto',
   guests: 'Personas',
   dates: 'Fechas',
+  campaign: 'Origen campaña',
 }
 
 // Campo trampa: invisible para personas, los bots lo rellenan.
