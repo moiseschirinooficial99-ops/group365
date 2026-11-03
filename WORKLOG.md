@@ -39,3 +39,9 @@
 - Primera prueba (6 clientes): buen saludo y cierre de llamadas, pero mensajes de 55–122 palabras, rechazó hablar inglés, dijo "garantizado" y "no pagas abogados", inventó un rango de precio y el estado de licencias de La Pineda, y usaba **negrita** Markdown.
 - Arreglo: RECORDATORIO_FINAL al final del prompt (idioma del cliente, ≤50 palabras, formato WhatsApp, sin precios/valoraciones, sin estado de licencias por municipio, sin "garantizado/blindado", citas las confirma José Luis), limpieza de "garantizado/blindado" en el prompt base, `toWhatsAppFormat()` antes de enviar y max_tokens 350 → 250. El simulador marca ahora esas palabras.
 - 2ª prueba: inglés OK, sin precios ni licencias inventados, sin ** , 41–56 palabras de media (inversor 91 y cortado a mitad de frase). Ajuste: max_tokens 320 + recorte automático a la última frase completa (`cerrarFrase`), sin plazos prometidos ("hoy mismo") ni cifras de negociación, estilo C con historias de 2-3 frases.
+
+## 2026-11-03 — Arreglo subida de PDF/flyer en el panel (PR #13)
+- Error al subir PDF en Oportunidades. La IA funciona (probada en local con clave de prod); el fallo estaba en la subida.
+- `uploadToSignedUrl` con un File lo enviaba como formulario e ignoraba contentType → ahora bytes en crudo con tipo explícito.
+- Tipo por extensión, aviso HEIC, errores legibles por paso (preparar/subir/analizar), maxDuration 300 s, fotos en paralelo.
+- gh: la cuenta activa era klarospro; cambiada a moiseschirinooficial99-ops (`gh auth switch`).
