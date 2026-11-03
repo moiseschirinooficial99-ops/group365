@@ -1,3 +1,11 @@
+// Limpia las variables de Supabase antes de que Next las incruste en el código.
+// En Vercel la clave pública llegó con un carácter invisible (BOM, ﻿) al
+// pegarla, y el navegador rechaza esa cabecera: fallaban la subida de PDF del
+// panel y todo lo que llama a Supabase desde el navegador.
+for (const k of ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY']) {
+  if (process.env[k]) process.env[k] = process.env[k].replace(/[﻿​\s]/g, '')
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // El SDK de Anthropic se carga tal cual desde node_modules: al empaquetarlo,

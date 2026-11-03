@@ -45,3 +45,9 @@
 - `uploadToSignedUrl` con un File lo enviaba como formulario e ignoraba contentType → ahora bytes en crudo con tipo explícito.
 - Tipo por extensión, aviso HEIC, errores legibles por paso (preparar/subir/analizar), maxDuration 300 s, fotos en paralelo.
 - gh: la cuenta activa era klarospro; cambiada a moiseschirinooficial99-ops (`gh auth switch`).
+
+## 2026-11-03 — Causa real del error de subida: clave Supabase con BOM (PR #14)
+- Tras PR #13 el panel mostró: "Failed to execute 'set' on 'Headers': String contains non ISO-8859-1 code point".
+- En Vercel Production `NEXT_PUBLIC_SUPABASE_ANON_KEY` empieza por `﻿` (BOM al pegarla). Rompe toda llamada a Supabase desde el navegador (subida PDF, login inversores).
+- Fix: `next.config.js` limpia las variables de Supabase antes de incrustarlas; `lib/supabase.ts` también. Probado con build con BOM → bundle limpio.
+- Pendiente Moisés: volver a pegar la clave limpia en Vercel (Settings → Environment Variables).
