@@ -163,12 +163,10 @@ export async function analyzeDocument(kind: DocKind, path: string) {
       : Promise.resolve([buffer]),
   ])
 
-  const images: string[] = []
-  for (const bytes of photos) {
-    const url = isPdf
-      ? await uploadPhoto(bytes, 'jpg', 'image/jpeg')
-      : await uploadPhoto(bytes, mime.split('/')[1] || 'jpg', mime)
-    if (url) images.push(url)
-  }
+  // En paralelo para no agotar el tiempo de la función con dossieres de muchas fotos
+  const urls = await Promise.all(photos.map(bytes => isPdf
+    ? uploadPhoto(bytes, 'jpg', 'image/jpeg')
+    : uploadPhoto(bytes, mime.split('/')[1] || 'jpg', mime)))
+  const images = urls.filter((u): u is string => !!u)
   return { fields, images, isPdf }
 }
