@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin, unauthorized } from '@/lib/adminAuth'
 import { analyzeDocument, DocKind } from '@/lib/documentAnalyzer'
 
-export const maxDuration = 120 // leer un dossier largo con IA y sacar sus fotos puede tardar
+export const maxDuration = 300 // leer un dossier largo con IA y sacar sus fotos puede tardar (máx. del plan con Fluid Compute)
 
 // El panel sube el PDF/imagen con la URL firmada y luego llama aquí con su ruta.
 // Devuelve los campos para prellenar el formulario y las URLs de las fotos.
