@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Link from 'next/link'
 import { config } from '@/lib/config'
+import LlamameAhora from '@/components/LlamameAhora'
 
 function AvailabilityCalendar({ propertyId }: { propertyId: string }) {
   const [bookings, setBookings] = useState<any[]>([])
@@ -234,6 +235,8 @@ export default function PropertyDetail({ property }: { property: any }) {
                 className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-[#1B7F6F]/10 border border-[#1B7F6F]/25 text-[#1B7F6F] font-medium hover:bg-[#1B7F6F]/20 transition-all">
                 <MessageCircle size={16} /> Contactar por WhatsApp
               </a>
+
+              {process.env.NEXT_PUBLIC_VOZ_ACTIVA === '1' && <LlamameAhora propiedadId={String(property.id)} />}
 
               <ShareButtons title={property.title} />
             </motion.div>
