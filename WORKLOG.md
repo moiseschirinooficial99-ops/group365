@@ -61,3 +61,4 @@
 ## 2026-11-12 — WhatsApp: llamada inmediata y primer mensaje
 - Prueba real: «quiero que me llames» no lanzaba la llamada (la detección solo cogía «llámame», «me puedes llamar»…) y el bot mandó un mensaje vacío. Ampliada la detección (me llames, llamarme, llámeme, me puede llamar…; «no me llames» no cuenta) y nunca se envía un mensaje vacío (si piden llamada, aviso a Telegram).
 - Primer mensaje cuando viene de una ficha: ya no repite los datos del piso; saluda, pide el nombre y luego pregunta si quiere visita o que le llamemos ahora.
+- Llamada desde WhatsApp: antes de llamar se extrae el nombre que el cliente escribió en el chat (y se guarda en el lead); Alejandra le saluda por su nombre. Si no lo dijo, `nombre` va vacío y Alejandra se lo pregunta (regla en el prompt de ElevenLabs).

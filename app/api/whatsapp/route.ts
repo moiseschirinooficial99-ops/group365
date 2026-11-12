@@ -504,14 +504,17 @@ ROI estimado: ${p.estimated_roi || p.roi_percentage ? (p.estimated_roi || p.roi_
     // El cliente pide por WhatsApp que le llamen → Alejandra (voz) le llama ya, sabiendo de qué se ha hablado.
     if (process.env.ELEVENLABS_AGENT_ID && pideLlamada(text) && !rateLimited(`voz-wa:${from}`, 2, 60 * 60 * 1000)) {
       const digitosWa = from.replace(/\D/g, '')
+      // Antes de llamar, se extrae de la conversación el nombre que haya escrito (y se guarda en el lead),
+      // para que Alejandra le salude por su nombre. Si no lo dijo, Alejandra se lo pregunta al empezar.
+      await syncLeadFromWhatsApp({ phone: from, latestMessage: text, history: history || [] })
       const { data: leadRow } = await supabaseAdmin.from('leads').select('name')
         .ilike('phone', `%${digitosWa.slice(-9)}%`).order('created_at', { ascending: false }).limit(1)
-      const nombre = (leadRow?.[0]?.name || '').split(' ')[0]
+      const nombre = (leadRow?.[0]?.name || '').trim().split(' ')[0]
       const piso = properties[0]
       let aviso = '¡Claro! Te llamo ahora mismo 📞 Ten el móvil a mano.'
       try {
         await lanzarLlamada(`+${digitosWa}`, {
-          nombre: nombre || 'cliente',
+          nombre,  // vacío si no lo sabemos: Alejandra se lo pregunta
           saludo: nombre ? `Hola ${nombre}` : 'Hola',
           motivo: 'me has pedido por WhatsApp que te llame',
           telefono: `+${digitosWa}`,
@@ -529,7 +532,6 @@ ${e.message}`).catch(() => {})
       }
       await sendWA(from, aviso)
       await supabaseAdmin.from('wa_conversations').insert({ phone: from, message: aviso, direction: 'outbound' })
-      await syncLeadFromWhatsApp({ phone: from, latestMessage: text, history: history || [] })
       return NextResponse.json({ ok: true })
     }
 
