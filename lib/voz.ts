@@ -102,10 +102,12 @@ export async function lanzarLlamada(to: string, variables: Record<string, string
   return data as { conversation_id?: string; callSid?: string }
 }
 
-// ¿El mensaje de WhatsApp pide una llamada? ("llámame", "me podéis llamar", "prefiero hablar por teléfono"…)
+// ¿El mensaje de WhatsApp pide una llamada? ("llámame", "quiero que me llames", "puedes llamarme",
+// "me puede llamar José Luis", "prefiero hablar por teléfono"…). "No me llames" no cuenta.
 export function pideLlamada(texto: string): boolean {
   const t = texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  return /\b(llamame|llamadme|me (puedes|podeis|podrias|pueden) llamar|me llamas|me llamais|quiero (una )?llamada|prefiero (una )?llamada|hablar por telefono|que me llamen|llamada ahora)\b/.test(t)
+  if (/\bno (me )?(llames|llameis|llamen|llame|llamar|llameme)\b/.test(t)) return false
+  return /\b(llamame|llamadme|llameme|llamenme|llamarme|me (llamas|llames|llamais|llameis|llame|llamen)|me (puedes|podeis|podrias|pueden|puede|podria|podrian) (llamar|telefonear)|(quiero|prefiero|pido|solicito) (una )?llamada|hablar por (telefono|llamada)|llamada (ahora|ya|por favor))\b/.test(t)
 }
 
 // Resumen corto del chat para que Alejandra sepa de qué se ha hablado.
