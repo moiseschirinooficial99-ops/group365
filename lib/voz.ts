@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { safeEqual } from '@/lib/adminAuth'
 import { supabaseAdmin } from '@/lib/supabase'
 
-// Agente de voz de Alejandro (ElevenLabs Agents + número de Twilio).
+// Agente de voz Alejandra (ElevenLabs Agents + número de Twilio). El bot de WhatsApp sigue siendo Alejandro.
 // Variables de entorno (Vercel → 360group → Settings → Environment Variables):
 //   ELEVENLABS_API_KEY         clave de la API de ElevenLabs
-//   ELEVENLABS_AGENT_ID        id del agente "Alejandro voz"
+//   ELEVENLABS_AGENT_ID        id del agente (en ElevenLabs se llama "Alejandro voz")
 //   ELEVENLABS_PHONE_ID        id del número importado en ElevenLabs (Phone Numbers)
 //   VOZ_TOOLS_SECRET           clave larga inventada; ElevenLabs la manda en la cabecera X-Voz-Secret
 //   ELEVENLABS_WEBHOOK_SECRET  secreto del webhook "post-call" que da ElevenLabs
@@ -81,7 +81,7 @@ export function firmaWebhookValida(raw: string, header: string | null): boolean 
   return safeEqual(partes.v0, esperado)
 }
 
-// Pide a ElevenLabs que Alejandro llame ya a este número.
+// Pide a ElevenLabs que Alejandra llame ya a este número.
 export async function lanzarLlamada(to: string, variables: Record<string, string>) {
   const key = process.env.ELEVENLABS_API_KEY
   const agent = process.env.ELEVENLABS_AGENT_ID

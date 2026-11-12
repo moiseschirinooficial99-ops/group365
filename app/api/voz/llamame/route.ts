@@ -4,7 +4,7 @@ import { clientIp, isHoneypotHit, rateLimited } from '@/lib/leadInput'
 import { sendTelegramNotification } from '@/lib/notifications'
 import { fichaHablada, lanzarLlamada, telefonoE164 } from '@/lib/voz'
 
-// "Llámame ahora" desde la ficha de un piso: guarda el lead y Alejandro llama en segundos.
+// "Llámame ahora" desde la ficha de un piso: guarda el lead y Alejandra llama en segundos.
 // Solo llama si la persona marcó que acepta la llamada (consentimiento).
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({})) as Record<string, any>
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       propiedad_id: piso?.id ? String(piso.id) : '',
       propiedad_ficha: piso ? fichaHablada(piso) : 'Sin piso concreto: pregúntale qué busca.',
     })
-    sendTelegramNotification(`📞 <b>Alejandro está llamando</b> a ${nombre} (${tel})${piso ? `\n🏠 ${piso.title}` : ''}`).catch(() => {})
+    sendTelegramNotification(`📞 <b>Alejandra está llamando</b> a ${nombre} (${tel})${piso ? `\n🏠 ${piso.title}` : ''}`).catch(() => {})
     return NextResponse.json({ ok: true, conversation_id: r.conversation_id })
   } catch (e: any) {
     console.error('VOZ llamame:', e.message)

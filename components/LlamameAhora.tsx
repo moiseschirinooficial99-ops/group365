@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { Phone, Check } from 'lucide-react'
 
-// Botón "Llámame ahora" de la ficha: Alejandro llama en segundos.
+// Botón "Llámame ahora" de la ficha: Alejandra llama en segundos.
 export default function LlamameAhora({ propiedadId }: { propiedadId?: string }) {
   const [abierto, setAbierto] = useState(false)
   const [nombre, setNombre] = useState('')
@@ -36,7 +36,7 @@ export default function LlamameAhora({ propiedadId }: { propiedadId?: string }) 
       <div className="mt-3 w-full py-4 rounded-xl bg-[#C9A84C]/10 border border-[#C9A84C]/30 text-center">
         <p className="text-[#C9A84C] font-medium flex items-center justify-center gap-2"><Check size={16} /> Te estamos llamando</p>
         <p className="text-white text-3xl font-semibold tabular-nums mt-1">{segundos}s</p>
-        <p className="text-[#8B96A5] text-xs mt-1">Ten el móvil a mano: te llama Alejandro, el asistente virtual de GROUP 360.</p>
+        <p className="text-[#8B96A5] text-xs mt-1">Ten el móvil a mano: te llama Alejandra, la asistente virtual de GROUP 360.</p>
       </div>
     )
   }

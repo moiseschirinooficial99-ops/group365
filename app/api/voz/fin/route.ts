@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   const segundos = Math.round(d.metadata?.call_duration_secs || 0)
 
   const transcripcion = (d.transcript || [])
-    .map((t: any) => `${t.role === 'agent' ? 'Alejandro' : 'Cliente'}: ${t.message || ''}`)
+    .map((t: any) => `${t.role === 'agent' ? 'Alejandra' : 'Cliente'}: ${t.message || ''}`)
     .join('\n').slice(0, 20000)
 
   const digitos = telefono.replace(/\D/g, '').slice(-9)
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       .ilike('phone', `%${digitos}%`).order('created_at', { ascending: false }).limit(1)
     const lead = data?.[0]
     if (lead) {
-      const nota = `📞 Llamada con Alejandro (${segundos}s, ${temperatura}): ${resumen}`
+      const nota = `📞 Llamada con Alejandra (${segundos}s, ${temperatura}): ${resumen}`
       await supabaseAdmin.from('leads').update({
         notes: [lead.notes, nota].filter(Boolean).join('\n\n').slice(0, 10000),
         last_contact_at: new Date().toISOString(),

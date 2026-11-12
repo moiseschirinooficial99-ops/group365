@@ -51,3 +51,8 @@
 - En Vercel Production `NEXT_PUBLIC_SUPABASE_ANON_KEY` empieza por `﻿` (BOM al pegarla). Rompe toda llamada a Supabase desde el navegador (subida PDF, login inversores).
 - Fix: `next.config.js` limpia las variables de Supabase antes de incrustarlas; `lib/supabase.ts` también. Probado con build con BOM → bundle limpio.
 - Pendiente Moisés: volver a pegar la clave limpia en Vercel (Settings → Environment Variables).
+
+## 2026-11-12 — Voz (Alejandra) en producción + citas sin solapes
+- PR #15 desplegado: agente de voz Alejandra (ElevenLabs + Twilio), «Llámame ahora» en la ficha y llamada desde WhatsApp. Apagado hasta poner en Vercel `NEXT_PUBLIC_VOZ_ACTIVA=1` (+ redeploy) y `ELEVENLABS_AGENT_ID`. Verificación 23/24 (único fallo: webhook WA sin firma, esperado con `WHATSAPP_SKIP_SIGNATURE=1`).
+- Citas por voz: antes de guardar, se comprueba que no se pise con otra cita activa (no cancelada/no_show); si choca, Alejandra propone el siguiente hueco libre de ese día (pasos de 30 min, hasta las 20:00). El panel sigue permitiendo solapes a mano.
+- Nombre: la voz es Alejandra (voz de mujer); el bot de WhatsApp sigue siendo Alejandro. Corregidos notas, avisos de Telegram y el texto del botón.
