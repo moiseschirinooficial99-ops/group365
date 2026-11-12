@@ -70,15 +70,34 @@ export async function citasSolapadas(inicioIso: string, duracionMin: number) {
   })
 }
 
-// Primer hueco libre a partir de inicioIso, en pasos de 30 min, el mismo día y antes de las 20:00 (Madrid).
+// Horario de citas de José Luis (hora de Madrid): de 9:00 a 19:00, la cita tiene que terminar a las 19:00 como tarde.
+export const HORARIO = { abre: 9, cierra: 19 }
+
+const diaMadrid = (t: number) => new Date(t).toLocaleDateString('es-ES', { timeZone: TZ })
+// Minutos desde medianoche en Madrid (14:30 → 870).
+function minutosMadrid(t: number) {
+  const [h, m] = new Date(t).toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false }).split(':').map(Number)
+  return (h % 24) * 60 + m
+}
+
+export function dentroDeHorario(inicioIso: string, duracionMin: number) {
+  const ini = new Date(inicioIso).getTime()
+  const desde = minutosMadrid(ini)
+  return desde >= HORARIO.abre * 60 && desde + duracionMin <= HORARIO.cierra * 60
+}
+
+// Primer hueco libre a partir de inicioIso, en pasos de 30 min, el mismo día y dentro del horario.
 export async function siguienteHuecoLibre(inicioIso: string, duracionMin: number): Promise<string | null> {
-  const diaMadrid = (t: number) => new Date(t).toLocaleDateString('es-ES', { timeZone: TZ })
-  const horaMadrid = (t: number) => Number(new Date(t).toLocaleString('en-GB', { timeZone: TZ, hour: '2-digit', hour12: false }))
   const base = new Date(inicioIso).getTime()
   for (let paso = 1; paso <= 20; paso++) {
     const t = base + paso * 30 * 60_000
-    if (diaMadrid(t) !== diaMadrid(base) || horaMadrid(t + duracionMin * 60_000 - 1) >= 20) return null
-    if ((await citasSolapadas(new Date(t).toISOString(), duracionMin)).length === 0) return new Date(t).toISOString()
+    const iso = new Date(t).toISOString()
+    if (diaMadrid(t) !== diaMadrid(base)) return null
+    if (!dentroDeHorario(iso, duracionMin)) {
+      if (minutosMadrid(t) < HORARIO.abre * 60) continue
+      return null
+    }
+    if ((await citasSolapadas(iso, duracionMin)).length === 0) return iso
   }
   return null
 }

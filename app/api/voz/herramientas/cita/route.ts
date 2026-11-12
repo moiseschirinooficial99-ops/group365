@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { citasSolapadas, crearCita, duracionPorTipo, fmtFecha, parseFechaMadrid, siguienteHuecoLibre } from '@/lib/citas'
+import { citasSolapadas, crearCita, dentroDeHorario, duracionPorTipo, fmtFecha, HORARIO, parseFechaMadrid, siguienteHuecoLibre } from '@/lib/citas'
 import { noAutorizado, telefonoE164, vozAutorizada } from '@/lib/voz'
 
 // Herramienta "agendar_cita" del agente de voz: crea la cita en /admin/agenda y avisa por Telegram.
@@ -18,9 +18,15 @@ export async function POST(req: NextRequest) {
 
   const tipo = b.tipo === 'llamada' ? 'llamada' : 'visita'
 
+  const duracion = duracionPorTipo(tipo)
+  if (!dentroDeHorario(inicio, duracion)) {
+    return NextResponse.json({
+      resultado: `Fuera de horario: las citas son de ${HORARIO.abre}:00 a ${HORARIO.cierra}:00 y tienen que terminar a las ${HORARIO.cierra}:00 como tarde (las visitas duran una hora). Propón otra hora dentro de ese horario. No confirmes nada hasta guardarla.`,
+    })
+  }
+
   try {
     // No pisar otra cita: si la hora está cogida, proponer el siguiente hueco libre.
-    const duracion = duracionPorTipo(tipo)
     if ((await citasSolapadas(inicio, duracion)).length > 0) {
       const hueco = await siguienteHuecoLibre(inicio, duracion)
       return NextResponse.json({
