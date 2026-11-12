@@ -6,6 +6,8 @@ import { callAnthropic } from '@/app/api/anthropic'
 import { sendTelegramNotification } from '@/lib/notifications'
 import { config, WA_GRAPH_VERSION } from '@/lib/config'
 import { safeEqual } from '@/lib/adminAuth'
+import { fichaHablada, lanzarLlamada, pideLlamada, resumenChat } from '@/lib/voz'
+import { rateLimited } from '@/lib/leadInput'
 
 
 async function getWAToken(): Promise<string | null> {
@@ -497,6 +499,38 @@ ROI estimado: ${p.estimated_roi || p.roi_percentage ? (p.estimated_roi || p.roi_
           content: m.message,
         })
       })
+    }
+
+    // El cliente pide por WhatsApp que le llamen → Alejandra (voz) le llama ya, sabiendo de qué se ha hablado.
+    if (process.env.ELEVENLABS_AGENT_ID && pideLlamada(text) && !rateLimited(`voz-wa:${from}`, 2, 60 * 60 * 1000)) {
+      const digitosWa = from.replace(/\D/g, '')
+      const { data: leadRow } = await supabaseAdmin.from('leads').select('name')
+        .ilike('phone', `%${digitosWa.slice(-9)}%`).order('created_at', { ascending: false }).limit(1)
+      const nombre = (leadRow?.[0]?.name || '').split(' ')[0]
+      const piso = properties[0]
+      let aviso = '¡Claro! Te llamo ahora mismo 📞 Ten el móvil a mano.'
+      try {
+        await lanzarLlamada(`+${digitosWa}`, {
+          nombre: nombre || 'cliente',
+          saludo: nombre ? `Hola ${nombre}` : 'Hola',
+          motivo: 'me has pedido por WhatsApp que te llame',
+          telefono: `+${digitosWa}`,
+          propiedad: piso?.title || 'ninguna en concreto',
+          propiedad_id: piso?.id ? String(piso.id) : '',
+          propiedad_ficha: piso ? fichaHablada(piso) : 'Sin piso concreto: pregúntale qué busca.',
+          resumen_chat: resumenChat(history || [], text),
+        })
+        sendTelegramNotification(`📞 <b>Alejandra está llamando</b> a +${digitosWa} (lo pidió por WhatsApp)`).catch(() => {})
+      } catch (e: any) {
+        console.error('WA voz:', e.message)
+        aviso = 'Ahora mismo no puedo llamarte, pero José Luis te llama en unos minutos 🙏'
+        sendTelegramNotification(`⚠️ <b>Pidió llamada por WhatsApp y no se pudo lanzar</b>: +${digitosWa}. Llámale tú.
+${e.message}`).catch(() => {})
+      }
+      await sendWA(from, aviso)
+      await supabaseAdmin.from('wa_conversations').insert({ phone: from, message: aviso, direction: 'outbound' })
+      await syncLeadFromWhatsApp({ phone: from, latestMessage: text, history: history || [] })
+      return NextResponse.json({ ok: true })
     }
 
     // Respuesta IA
