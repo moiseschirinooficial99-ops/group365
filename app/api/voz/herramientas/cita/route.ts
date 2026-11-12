@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { crearCita, fmtFecha, parseFechaMadrid } from '@/lib/citas'
+import { citasSolapadas, crearCita, duracionPorTipo, fmtFecha, parseFechaMadrid, siguienteHuecoLibre } from '@/lib/citas'
 import { noAutorizado, telefonoE164, vozAutorizada } from '@/lib/voz'
 
 // Herramienta "agendar_cita" del agente de voz: crea la cita en /admin/agenda y avisa por Telegram.
@@ -16,14 +16,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ resultado: 'Esa fecha ya ha pasado. Propón otro día.' })
   }
 
+  const tipo = b.tipo === 'llamada' ? 'llamada' : 'visita'
+
   try {
+    // No pisar otra cita: si la hora está cogida, proponer el siguiente hueco libre.
+    const duracion = duracionPorTipo(tipo)
+    if ((await citasSolapadas(inicio, duracion)).length > 0) {
+      const hueco = await siguienteHuecoLibre(inicio, duracion)
+      return NextResponse.json({
+        resultado: hueco
+          ? `Esa hora ya está ocupada. El siguiente hueco libre ese día es ${fmtFecha(hueco)}. Propónselo; si no le va bien, pide otro día. No confirmes nada hasta guardarla.`
+          : 'Ese día ya no quedan huecos a partir de esa hora. Propón otro día. No confirmes nada hasta guardarla.',
+      })
+    }
+
     const cita = await crearCita({
       name: nombre,
       starts_at: inicio,
-      kind: b.tipo === 'llamada' ? 'llamada' : 'visita',
+      kind: tipo,
       phone: telefonoE164(String(b.telefono || '')),
       property_id: b.propiedad_id ? String(b.propiedad_id) : null,
-      notes: [b.notas && String(b.notas).slice(0, 300), 'Agendada por Alejandro (voz)'].filter(Boolean).join(' · '),
+      notes: [b.notas && String(b.notas).slice(0, 300), 'Agendada por Alejandra (voz)'].filter(Boolean).join(' · '),
       source: 'voz',
     })
     return NextResponse.json({ resultado: `Cita guardada para ${fmtFecha(cita.starts_at)}. Confírmalo en voz alta con el día y la hora.` })

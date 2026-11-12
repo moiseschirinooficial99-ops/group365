@@ -49,6 +49,40 @@ export function parseFechaMadrid(fecha: string, hora: string): string | null {
   return new Date(probe.getTime() - (asMadrid.getTime() - asUtc.getTime())).toISOString()
 }
 
+export function duracionPorTipo(kind?: string) {
+  return kind === 'visita' ? 60 : 30
+}
+
+// Citas activas (no canceladas) que se pisan con [inicio, inicio + duracion).
+export async function citasSolapadas(inicioIso: string, duracionMin: number) {
+  const ini = new Date(inicioIso).getTime()
+  const fin = ini + duracionMin * 60_000
+  // Ninguna cita dura más de 4 h: basta con mirar desde 4 h antes.
+  const { data, error } = await supabaseAdmin.from('appointments')
+    .select('id, starts_at, duration_min, status')
+    .gte('starts_at', new Date(ini - 4 * 3600_000).toISOString())
+    .lt('starts_at', new Date(fin).toISOString())
+    .not('status', 'in', '(cancelada,no_show)')
+  if (error) throw error
+  return (data || []).filter((c: { starts_at: string; duration_min: number | null }) => {
+    const cIni = new Date(c.starts_at).getTime()
+    return cIni < fin && cIni + (c.duration_min || 30) * 60_000 > ini
+  })
+}
+
+// Primer hueco libre a partir de inicioIso, en pasos de 30 min, el mismo día y antes de las 20:00 (Madrid).
+export async function siguienteHuecoLibre(inicioIso: string, duracionMin: number): Promise<string | null> {
+  const diaMadrid = (t: number) => new Date(t).toLocaleDateString('es-ES', { timeZone: TZ })
+  const horaMadrid = (t: number) => Number(new Date(t).toLocaleString('en-GB', { timeZone: TZ, hour: '2-digit', hour12: false }))
+  const base = new Date(inicioIso).getTime()
+  for (let paso = 1; paso <= 20; paso++) {
+    const t = base + paso * 30 * 60_000
+    if (diaMadrid(t) !== diaMadrid(base) || horaMadrid(t + duracionMin * 60_000 - 1) >= 20) return null
+    if ((await citasSolapadas(new Date(t).toISOString(), duracionMin)).length === 0) return new Date(t).toISOString()
+  }
+  return null
+}
+
 // Crea la cita, la vincula al lead (por id o por teléfono), mueve el lead a
 // "qualified" y avisa por Telegram + n8n. Lo usan el panel y el bot de Telegram
 // (y lo usará el bot de WhatsApp).
@@ -69,7 +103,7 @@ export async function crearCita(input: NewCita) {
     name: input.name,
     starts_at: input.starts_at,
     kind,
-    duration_min: input.duration_min || (kind === 'visita' ? 60 : 30),
+    duration_min: input.duration_min || duracionPorTipo(kind),
     phone: input.phone || null,
     email: input.email || null,
     notes: input.notes || null,
