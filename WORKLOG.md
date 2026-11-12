@@ -57,3 +57,7 @@
 - Citas por voz: antes de guardar, se comprueba que no se pise con otra cita activa (no cancelada/no_show); si choca, Alejandra propone el siguiente hueco libre de ese día (pasos de 30 min, hasta las 20:00). El panel sigue permitiendo solapes a mano.
 - Nombre: la voz es Alejandra (voz de mujer); el bot de WhatsApp sigue siendo Alejandro. Corregidos notas, avisos de Telegram y el texto del botón.
 - Horario de citas por voz: de 9:00 a 19:00 (Madrid); la cita tiene que terminar a las 19:00. Fuera de horario, Alejandra propone otra hora. Constante `HORARIO` en lib/citas.ts.
+
+## 2026-11-12 — WhatsApp: llamada inmediata y primer mensaje
+- Prueba real: «quiero que me llames» no lanzaba la llamada (la detección solo cogía «llámame», «me puedes llamar»…) y el bot mandó un mensaje vacío. Ampliada la detección (me llames, llamarme, llámeme, me puede llamar…; «no me llames» no cuenta) y nunca se envía un mensaje vacío (si piden llamada, aviso a Telegram).
+- Primer mensaje cuando viene de una ficha: ya no repite los datos del piso; saluda, pide el nombre y luego pregunta si quiere visita o que le llamemos ahora.

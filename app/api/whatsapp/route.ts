@@ -548,6 +548,16 @@ ${e.message}`).catch(() => {})
       }
     }
 
+    // Nunca mandar un mensaje vacío (la IA a veces devuelve solo espacios o nada).
+    if (!reply || !reply.trim()) {
+      console.warn('WA: respuesta vacía de la IA — uso respuesta de reserva')
+      const quiereLlamada = /llam/i.test(text)
+      if (quiereLlamada) sendTelegramNotification(`📞 <b>Pidió que le llamen por WhatsApp</b>: +${from.replace(/\D/g, '')}. Llámale tú.`).catch(() => {})
+      reply = quiereLlamada
+        ? 'Perfecto, te llamamos en unos minutos 📞 Ten el móvil a mano.'
+        : 'Perdona, no te he entendido bien. ¿Me lo puedes repetir? 🙏'
+    }
+
     // Enviar respuesta por WhatsApp
     const sendResult = await sendWA(from, reply)
     console.log('WA SEND result:', sendResult)
