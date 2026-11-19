@@ -69,3 +69,4 @@
 - Envío automático el día 5 (cron) del mes anterior a `GESTORA_EMAIL` por Resend. Solo marca "enviado" si el correo se acepta.
 - Pendiente de Moisés: ejecutar `db/sql_contabilidad_extractos.sql` (tras volcado) y poner en Vercel `GESTORA_EMAIL`, `RESEND_API_KEY`, `EMAIL_FROM` (dominio verificado) y `CRON_SECRET`.
 - Sin commit ni PR todavía.
+- Llamada desde WhatsApp: antes de llamar se extrae el nombre que el cliente escribió en el chat (y se guarda en el lead); Alejandra le saluda por su nombre. Si no lo dijo, `nombre` va vacío y Alejandra se lo pregunta (regla en el prompt de ElevenLabs).
