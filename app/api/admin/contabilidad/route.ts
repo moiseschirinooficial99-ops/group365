@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { isAdmin, unauthorized } from '@/lib/adminAuth'
-import { BUCKET, esTipoSoportado, guardarDocumento, rangoTrimestre, resumenFiscal } from '@/lib/contabilidad'
+import {
+  BUCKET, SUBIDORES, rangoTrimestre, resumenBancario, resumenFiscal, subirArchivosContables,
+} from '@/lib/contabilidad'
 
-export const maxDuration = 60 // la lectura con IA de un PDF puede tardar
+export const maxDuration = 300 // leer extractos largos con IA puede tardar
 
 // GET ?year=2026&q=4 (q opcional: sin q = año completo)
 export async function GET(req: NextRequest) {
@@ -23,38 +25,35 @@ export async function GET(req: NextRequest) {
   const { data, error } = await query.order('issue_date', { ascending: false, nullsFirst: true })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const docs: any[] = data || []
-  return NextResponse.json({ docs, resumen: resumenFiscal(docs.filter(d => d.issue_date)) })
+
+  const ids = docs.map(d => d.id)
+  const { data: movs } = ids.length
+    ? await supabaseAdmin.from('movimientos_bancarios').select('*').in('document_id', ids).order('fecha', { ascending: false })
+    : { data: [] as any[] }
+  const movimientos: any[] = movs || []
+
+  const conFecha = docs.filter(d => d.issue_date)
+  return NextResponse.json({
+    docs,
+    movimientos,
+    resumen: resumenFiscal(conFecha),
+    banco: resumenBancario(movimientos.filter(m => m.fecha)),
+  })
 }
 
-// POST multipart: file (uno o varios) + notes opcional
+// POST multipart: file (uno o varios) + tipo ('factura' | 'extracto') + subido_por + notes opcional
 export async function POST(req: NextRequest) {
   if (!isAdmin(req)) return unauthorized()
   try {
     const form = await req.formData()
     const files = form.getAll('file').filter((f): f is File => f instanceof File)
     if (!files.length) return NextResponse.json({ error: 'No se recibió ningún archivo' }, { status: 400 })
+    const tipo = form.get('tipo') === 'extracto' ? 'extracto' : 'factura'
+    const quien = String(form.get('subido_por') || '')
+    const subidoPor = (SUBIDORES as readonly string[]).includes(quien) ? quien : SUBIDORES[0]
     const notes = (form.get('notes') as string) || null
 
-    const results = []
-    for (const file of files) {
-      if (file.size > 15 * 1024 * 1024) {
-        results.push({ file: file.name, error: 'Archivo mayor de 15 MB' })
-        continue
-      }
-      const mime = file.type || 'application/octet-stream'
-      if (!esTipoSoportado(mime)) {
-        results.push({ file: file.name, error: 'Formato no admitido (usa JPG, PNG, WEBP o PDF)' })
-        continue
-      }
-      try {
-        const doc = await guardarDocumento({
-          buffer: Buffer.from(await file.arrayBuffer()), mime, fileName: file.name, source: 'panel', notes,
-        })
-        results.push({ file: file.name, doc })
-      } catch (e: any) {
-        results.push({ file: file.name, error: e.message })
-      }
-    }
+    const results = await subirArchivosContables(files, { tipo, subidoPor, notes })
     return NextResponse.json({ ok: true, results })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
@@ -84,6 +83,7 @@ export async function DELETE(req: NextRequest) {
   const id = req.nextUrl.searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'Falta id' }, { status: 400 })
   const { data: doc } = await supabaseAdmin.from('accounting_documents').select('file_path').eq('id', id).single()
+  // Los movimientos del extracto se borran solos (ON DELETE CASCADE).
   const { error } = await supabaseAdmin.from('accounting_documents').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (doc?.file_path) await supabaseAdmin.storage.from(BUCKET).remove([doc.file_path])
