@@ -61,4 +61,12 @@
 ## 2026-11-12 — WhatsApp: llamada inmediata y primer mensaje
 - Prueba real: «quiero que me llames» no lanzaba la llamada (la detección solo cogía «llámame», «me puedes llamar»…) y el bot mandó un mensaje vacío. Ampliada la detección (me llames, llamarme, llámeme, me puede llamar…; «no me llames» no cuenta) y nunca se envía un mensaje vacío (si piden llamada, aviso a Telegram).
 - Primer mensaje cuando viene de una ficha: ya no repite los datos del piso; saluda, pide el nombre y luego pregunta si quiere visita o que le llamemos ahora.
+
+## 2026-11-19 — Contabilidad: extractos bancarios, quién sube y envío mensual (rama feat/contabilidad-extractos)
+- Extractos: se leen con IA y se guardan cada movimiento (`movimientos_bancarios`) con su signo y saldo; cuadre automático contra el saldo final. No entran en IVA.
+- Quién sube: campo `subido_por` (Moisés / José Luis / Telegram). En Telegram, un extracto es el archivo con la palabra «extracto» en el pie.
+- ZIP trimestral y mensual con `movimientos_bancarios.csv` y carpeta `extractos/`.
+- Envío automático el día 5 (cron) del mes anterior a `GESTORA_EMAIL` por Resend. Solo marca "enviado" si el correo se acepta.
+- Pendiente de Moisés: ejecutar `db/sql_contabilidad_extractos.sql` (tras volcado) y poner en Vercel `GESTORA_EMAIL`, `RESEND_API_KEY`, `EMAIL_FROM` (dominio verificado) y `CRON_SECRET`.
+- Sin commit ni PR todavía.
 - Llamada desde WhatsApp: antes de llamar se extrae el nombre que el cliente escribió en el chat (y se guarda en el lead); Alejandra le saluda por su nombre. Si no lo dijo, `nombre` va vacío y Alejandra se lo pregunta (regla en el prompt de ElevenLabs).

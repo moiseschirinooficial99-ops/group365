@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Upload, Download, FileText, Pencil, Trash2, X, CheckCircle2, AlertTriangle } from 'lucide-react'
 
@@ -16,6 +16,9 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   revisado: { label: 'Revisado', cls: 'text-[#1B7F6F] border-[#1B7F6F]/30 bg-[#1B7F6F]/10' },
   enviado_gestoria: { label: 'Enviado a gestoría', cls: 'text-green-400 border-green-500/30 bg-green-500/10' },
 }
+// Lista de quién sube (espejo de SUBIDORES en lib/contabilidad.ts; no se importa
+// porque ese módulo usa claves del servidor).
+const SUBIDORES_UI = ['Moisés', 'José Luis', 'Telegram']
 const eur = (v: any) => v === null || v === undefined || v === '' ? '—'
   : Number(v).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
 
@@ -30,11 +33,19 @@ export default function ContabilidadPage() {
   const [edit, setEdit] = useState<any>(null)
   const [drag, setDrag] = useState(false)
   const [filtro, setFiltro] = useState('todos')
+  const [tipo, setTipo] = useState<'factura' | 'extracto'>('factura')
+  const [subidoPor, setSubidoPor] = useState('Moisés')
+  const [movs, setMovs] = useState<any[]>([])
+  const [banco, setBanco] = useState<any>(null)
+  const [abierto, setAbierto] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/admin/contabilidad?year=${year}&q=${q}`)
-    if (res.ok) { const d = await res.json(); setDocs(d.docs); setResumen(d.resumen) }
+    if (res.ok) {
+      const d = await res.json()
+      setDocs(d.docs); setResumen(d.resumen); setMovs(d.movimientos || []); setBanco(d.banco)
+    }
   }, [year, q])
   useEffect(() => { load() }, [load])
 
@@ -45,11 +56,15 @@ export default function ContabilidadPage() {
     // De uno en uno: cada archivo pasa por la lectura con IA.
     for (const f of list) {
       const fd = new FormData(); fd.append('file', f)
+      fd.append('tipo', tipo); fd.append('subido_por', subidoPor)
       try {
         const res = await fetch('/api/admin/contabilidad', { method: 'POST', body: fd })
         const data = await res.json()
         const r = data.results?.[0]
-        setLog(l => [...l, r?.error ? `❌ ${f.name}: ${r.error}` : `✅ ${f.name}: ${r?.doc?.counterparty || 'leído'} · ${eur(r?.doc?.total_amount)}`])
+        const resumenLinea = r?.doc?.doc_type === 'extracto'
+          ? `${r?.doc?.counterparty || 'extracto'} · ${r?.movimientos ?? 0} movimientos`
+          : `${r?.doc?.counterparty || 'leído'} · ${eur(r?.doc?.total_amount)}`
+        setLog(l => [...l, r?.error ? `❌ ${f.name}: ${r.error}` : `✅ ${f.name}: ${resumenLinea}`])
       } catch {
         setLog(l => [...l, `❌ ${f.name}: error de red`])
       }
@@ -94,13 +109,28 @@ export default function ContabilidadPage() {
 
         {/* Resumen */}
         {resumen && (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
             {[
               { label: 'Ingresos (total)', value: eur(resumen.ingresos_total), cls: 'text-[#1B7F6F]' },
               { label: 'Gastos (total)', value: eur(resumen.gastos_total), cls: 'text-white' },
               { label: 'IVA repercutido', value: eur(resumen.iva_repercutido), cls: 'text-white' },
               { label: 'IVA soportado', value: eur(resumen.iva_soportado), cls: 'text-white' },
               { label: resumen.iva_resultado >= 0 ? 'IVA a ingresar (orient.)' : 'IVA a compensar (orient.)', value: eur(Math.abs(resumen.iva_resultado)), cls: 'gold-text' },
+            ].map(s => (
+              <div key={s.label} className="card p-4">
+                <div className={`text-xl font-bold font-playfair ${s.cls}`}>{s.value}</div>
+                <div className="text-[#8B96A5] text-xs mt-1">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        {banco && banco.movimientos > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            {[
+              { label: 'Movimientos del banco', value: String(banco.movimientos), cls: 'text-white' },
+              { label: 'Entradas en cuenta', value: eur(banco.entradas), cls: 'text-[#1B7F6F]' },
+              { label: 'Salidas de cuenta', value: eur(banco.salidas), cls: 'text-white' },
+              { label: 'Neto del periodo', value: eur(banco.neto), cls: 'gold-text' },
             ].map(s => (
               <div key={s.label} className="card p-4">
                 <div className={`text-xl font-bold font-playfair ${s.cls}`}>{s.value}</div>
@@ -120,17 +150,28 @@ export default function ContabilidadPage() {
             className={`card p-8 border-2 border-dashed cursor-pointer text-center transition-colors ${drag ? 'border-[#C9A84C] bg-[#C9A84C]/5' : 'border-white/10 hover:border-white/25'}`}>
             <input ref={inputRef} type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden"
               onChange={e => { if (e.target.files) upload(e.target.files); e.target.value = '' }} />
+            <div className="flex flex-wrap gap-2 justify-center mb-4" onClick={e => e.stopPropagation()}>
+              <select className="input" value={tipo} onChange={e => setTipo(e.target.value as 'factura' | 'extracto')}>
+                <option value="factura">Factura / ticket</option>
+                <option value="extracto">Extracto bancario</option>
+              </select>
+              <select className="input" value={subidoPor} onChange={e => setSubidoPor(e.target.value)}>
+                {SUBIDORES_UI.map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
             <Upload className="mx-auto text-[#C9A84C] mb-3" size={28} />
-            <p className="text-white font-medium">{uploading ? `Leyendo ${uploading} documento(s)…` : 'Arrastra facturas, tickets o PDFs aquí'}</p>
-            <p className="text-[#8B96A5] text-sm mt-1">La IA extrae proveedor, NIF, base, IVA, IRPF y total. Tú solo revisas.</p>
-            <p className="text-[#8B96A5] text-xs mt-3">📱 También por Telegram: envía la foto o el PDF al bot.</p>
+            <p className="text-white font-medium">{uploading ? `Leyendo ${uploading} documento(s)…` : tipo === 'extracto' ? 'Arrastra aquí los extractos (PDF o captura)' : 'Arrastra facturas, tickets o PDFs aquí'}</p>
+            <p className="text-[#8B96A5] text-sm mt-1">{tipo === 'extracto'
+              ? 'La IA lee cada movimiento y comprueba que cuadre con el saldo. Los extractos no entran en el IVA.'
+              : 'La IA extrae proveedor, NIF, base, IVA, IRPF y total. Tú solo revisas.'}</p>
+            <p className="text-[#8B96A5] text-xs mt-3">📱 También por Telegram: envía la foto o el PDF al bot. Con la palabra «extracto» en el pie se guarda como extracto.</p>
             {log.length > 0 && <div className="text-left mt-4 space-y-1 text-xs text-[#8B96A5]">{log.map((l, i) => <div key={i}>{l}</div>)}</div>}
           </div>
 
           {/* Gestoría */}
           <div className="card p-5">
             <h2 className="text-white font-semibold mb-2">Enviar a la gestoría</h2>
-            <p className="text-[#8B96A5] text-sm mb-4">ZIP del {q}º trimestre con el libro (Excel/CSV), el resumen y todos los archivos ordenados en gastos/ e ingresos/.</p>
+            <p className="text-[#8B96A5] text-sm mb-4">ZIP del {q}º trimestre con el libro (Excel/CSV), los movimientos del banco, el resumen y todos los archivos ordenados en gastos/, ingresos/ y extractos/. Cada día 5 se envía automáticamente el mes anterior a la gestoría.</p>
             {resumen?.pendientes_revision > 0 && (
               <p className="text-[#C9A84C] text-xs mb-3 flex items-center gap-1"><AlertTriangle size={12} /> {resumen.pendientes_revision} documento(s) sin revisar</p>
             )}
@@ -163,11 +204,17 @@ export default function ContabilidadPage() {
             <tbody>
               {visibles.length === 0 && <tr><td colSpan={8} className="p-8 text-center text-[#8B96A5]">No hay documentos en este trimestre.</td></tr>}
               {visibles.map(d => (
-                <tr key={d.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                <Fragment key={d.id}>
+                <tr className="border-b border-white/5 hover:bg-white/[0.02]">
                   <td className="p-3 whitespace-nowrap text-[#8B96A5]">{d.issue_date ? new Date(`${d.issue_date}T12:00:00`).toLocaleDateString('es-ES') : <span className="text-red-400">sin fecha</span>}</td>
                   <td className="p-3">
                     <div className="text-white">{d.direction === 'ingreso' ? '📈' : d.direction === 'gasto' ? '📉' : '📄'} {d.counterparty || '—'}</div>
-                    <div className="text-[11px] text-[#8B96A5]">{d.counterparty_nif || 'sin NIF'} · {d.invoice_number || d.doc_type}</div>
+                    <div className="text-[11px] text-[#8B96A5]">{d.counterparty_nif || 'sin NIF'} · {d.invoice_number || d.doc_type}{d.subido_por && <span> · subido por {d.subido_por}</span>}</div>
+                    {d.doc_type === 'extracto' && (
+                      <button onClick={() => setAbierto(abierto === d.id ? null : d.id)} className="text-[11px] text-[#C9A84C] hover:underline mt-1">
+                        {abierto === d.id ? 'Ocultar movimientos' : `Ver movimientos (${movs.filter(m => m.document_id === d.id).length})`}
+                      </button>
+                    )}
                   </td>
                   <td className="p-3 text-[#8B96A5] max-w-[220px]">
                     <div className="truncate">{d.concept || '—'}</div>
@@ -190,6 +237,26 @@ export default function ContabilidadPage() {
                     </div>
                   </td>
                 </tr>
+                {abierto === d.id && (
+                  <tr className="border-b border-white/5 bg-[#0F1419]">
+                    <td colSpan={8} className="p-3">
+                      <table className="w-full text-xs">
+                        <thead><tr className="text-left text-[#8B96A5]"><th className="p-1.5">Fecha</th><th className="p-1.5">Concepto</th><th className="p-1.5 text-right">Importe</th><th className="p-1.5 text-right">Saldo</th></tr></thead>
+                        <tbody>
+                          {movs.filter(m => m.document_id === d.id).sort((a, b) => String(a.fecha).localeCompare(String(b.fecha))).map(m => (
+                            <tr key={m.id} className="border-t border-white/5">
+                              <td className="p-1.5 text-[#8B96A5] whitespace-nowrap">{m.fecha ? new Date(`${m.fecha}T12:00:00`).toLocaleDateString('es-ES') : 'sin fecha'}</td>
+                              <td className="p-1.5 text-white">{m.concepto}</td>
+                              <td className={`p-1.5 text-right whitespace-nowrap ${Number(m.importe) < 0 ? 'text-red-300' : 'text-[#1B7F6F]'}`}>{eur(m.importe)}</td>
+                              <td className="p-1.5 text-right whitespace-nowrap text-[#8B96A5]">{eur(m.saldo)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>

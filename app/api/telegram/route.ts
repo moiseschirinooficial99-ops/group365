@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { notifyPropertyPublished } from '@/lib/notifications'
 import { isAdminChat, safeEqual } from '@/lib/adminAuth'
 import { crearCita, parseFechaMadrid, fmtFecha, KIND_LABEL } from '@/lib/citas'
-import { guardarDocumento, esTipoSoportado, resumenFiscal, rangoTrimestre } from '@/lib/contabilidad'
+import { guardarDocumento, guardarExtracto, esTipoSoportado, resumenFiscal, rangoTrimestre } from '@/lib/contabilidad'
 
 export const maxDuration = 60 // lectura con IA de facturas
 
@@ -232,7 +232,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true })
       }
       try {
-        const d = await guardarDocumento({ buffer, mime, fileName, source: 'telegram', notes: caption || null })
+        // Con la palabra "extracto" en el pie de foto/PDF se lee como extracto bancario:
+        // se guardan sus movimientos y no entra en IVA.
+        if (/extracto/i.test(caption)) {
+          const r = await guardarExtracto({ buffer, mime, fileName, source: 'telegram', subidoPor: 'Telegram', notes: caption || null })
+          const aviso = !r.leido || r.doc.ai_confidence === 'baja' ? '\n\n⚠️ Lectura dudosa: revísalo en el panel.' : ''
+          await sendTelegram(chatId, `✅ <b>Extracto guardado</b>\n\n🏦 ${r.doc.counterparty || '—'}\n📅 Hasta ${r.doc.issue_date || 'sin fecha'}\n🧾 Movimientos: ${r.movimientos}\n💰 Saldo final: ${eur(r.doc.saldo_final)}${r.doc.ai_notes ? `\n📝 ${r.doc.ai_notes}` : ''}${aviso}`)
+          return NextResponse.json({ ok: true })
+        }
+        const d = await guardarDocumento({ buffer, mime, fileName, source: 'telegram', subidoPor: 'Telegram', notes: caption || null })
         const tipo = d.direction === 'ingreso' ? '📈 Ingreso' : d.direction === 'gasto' ? '📉 Gasto' : '📄 Documento'
         const aviso = d.ai_confidence === 'baja' ? '\n\n⚠️ Lectura dudosa: revísalo en el panel.' : ''
         await sendTelegram(chatId, `✅ <b>Guardado en contabilidad</b>\n\n${tipo} · ${d.doc_type}\n🏢 ${d.counterparty || '—'}${d.counterparty_nif ? ` (${d.counterparty_nif})` : ''}\n📅 ${d.issue_date || 'sin fecha'}\n💶 Base ${eur(d.base_amount)} · IVA ${eur(d.vat_amount)} · <b>Total ${eur(d.total_amount)}</b>\n🏷️ ${d.category || '—'}${d.ai_notes ? `\n📝 ${d.ai_notes}` : ''}${aviso}`)
